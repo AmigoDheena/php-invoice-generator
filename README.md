@@ -2,6 +2,12 @@
 
 A simple, modern, and self-hosted invoice generator web app built with PHP and Tailwind CSS. No database required—data is stored in JSON files for easy setup and portability.
 
+![UI Tailwind CSS](https://img.shields.io/badge/UI-Tailwind%20CSS-38bdf8)
+![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4)
+![PDF Export](https://img.shields.io/badge/PDF-dompdf-4b4b4b)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
+![No Database](https://img.shields.io/badge/No%20Database-JSON%20Storage-44cc11)
+
 ## Features
 
 - Create, edit, and delete invoices
