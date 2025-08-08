@@ -1,0 +1,68 @@
+/* Custom styles for invoice generator */
+
+/* Printable invoice styles */
+@media print {
+    body {
+        background-color: white;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+    }
+    
+    header, .no-print, .actions, .flex.space-x-2, .flex.justify-between.items-center {
+        display: none !important;
+    }
+    
+    #printable-area {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+    }
+    
+    #invoice-content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Ensure tables display properly when printing */
+    table {
+        width: 100%;
+        page-break-inside: auto;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+}
+
+/* Invoice status badges */
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-paid {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge-unpaid {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Form focus styles */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}

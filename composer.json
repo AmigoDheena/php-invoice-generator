@@ -1,0 +1,14 @@
+{
+    "name": "ham/invoice-generator",
+    "description": "Simple invoice generator using PHP and Tailwind CSS",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "dompdf/dompdf": "^3.1"
+    },
+    "autoload": {
+        "files": [
+            "includes/functions.php"
+        ]
+    }
+}

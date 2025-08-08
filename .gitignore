@@ -1,0 +1,11 @@
+# Ignore Composer dependencies
+/vendor/
+
+# Ignore local data storage
+/data/
+
+# Ignore OS and IDE files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
