@@ -1,3 +1,4 @@
+
 # PHP Invoice Generator (No Database)
 
 A simple, modern, and self-hosted invoice generator web app built with PHP and Tailwind CSS. No database required—data is stored in JSON files for easy setup and portability.
@@ -14,11 +15,14 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Add multiple items per invoice (description, quantity, price)
 - Option to include or exclude tax (18%)
 - Manage multiple company profiles ("Invoice From")
+- Add and display company banking details on invoices and PDFs
 - All data stored in JSON files (no SQL or DB setup needed)
 - Export invoices as PDF (using dompdf)
 - Responsive UI with Tailwind CSS
 - Edit invoices at any time
 - List and manage all invoices from the dashboard
+- Currency displayed as `Rs.` throughout the app and PDF (for Indian Rupees)
+- No database required—just PHP and file permissions
 
 ## Requirements
 
@@ -50,7 +54,7 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - **Create Invoice:** Click "Create New Invoice", fill in details, add items, and save.
 - **Edit Invoice:** Click the edit icon next to any invoice in the dashboard.
 - **Export PDF:** Click the PDF icon to download a PDF version of any invoice.
-- **Manage Companies:** Add or edit your own company profiles under "Manage Companies".
+- **Manage Companies:** Add or edit your own company profiles under "Manage Companies". You can now add banking details for payment info.
 - **No Database:** All data is stored in `/data` as JSON files. You can back up or move your data easily.
 
 ## File Structure
@@ -59,8 +63,8 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - `/create_invoice.php` — Create new invoice
 - `/edit_invoice.php` — Edit existing invoice
 - `/view_invoice.php` — View invoice details
-- `/download_pdf.php` — Export invoice as PDF
-- `/manage_companies.php` — Manage company profiles
+- `/download_pdf.php` — Export invoice as PDF (with banking details and Rs. currency)
+- `/manage_companies.php` — Manage company profiles and banking details
 - `/delete_invoice.php` — Delete invoice
 - `/includes/functions.php` — Core PHP logic
 - `/data/` — JSON data storage (invoices, companies)
@@ -73,6 +77,7 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - UI is styled with [Tailwind CSS](https://tailwindcss.com/).
 - PDF export uses [dompdf](https://github.com/dompdf/dompdf).
 - No database required—just PHP and file permissions.
+- Currency is consistently shown as `Rs.` for Indian Rupees in all views and PDFs.
 
 ## .gitignore
 
