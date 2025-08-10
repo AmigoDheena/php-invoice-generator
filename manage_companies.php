@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'name' => $_POST['name'],
                 'email' => $_POST['email'],
                 'address' => $_POST['address'],
-                'phone' => $_POST['phone']
+                'phone' => $_POST['phone'],
+                'banking_details' => $_POST['banking_details'] ?? ''
             ];
             
             saveCompany($company);
@@ -136,6 +137,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="phone" class="block text-gray-700 font-medium mb-2">Phone</label>
                             <input type="text" id="phone" name="phone" value="<?php echo $editCompany ? $editCompany['phone'] : ''; ?>" 
                                    class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="banking_details" class="block text-gray-700 font-medium mb-2">Banking Details</label>
+                            <textarea id="banking_details" name="banking_details" rows="8" 
+                                      placeholder="Name: Your Company Name&#10;Bank: Your Bank Name&#10;Branch: Your Branch&#10;Acc num: 1234567890&#10;IFSC Code: ABCD0123456&#10;Account: Savings&#10;PAN: ABCDE1234F&#10;Gpay and PhonePe: 9876543210"
+                                      class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200"><?php echo $editCompany ? ($editCompany['banking_details'] ?? '') : ''; ?></textarea>
+                            <small class="text-gray-500">Enter your banking details for payment information on invoices</small>
                         </div>
                         
                         <div class="flex items-center justify-between">

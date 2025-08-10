@@ -62,113 +62,184 @@ $html = '
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             color: #333;
+            font-size: 12px;
+            line-height: 1.3;
         }
         .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 40px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .invoice-header table {
+            width: 100%;
+            border: none;
+            margin-bottom: 0;
+        }
+        .invoice-header td {
+            border: none;
+            padding: 0;
+            vertical-align: top;
         }
         .invoice-title {
-            font-size: 28px;
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .company-info {
             text-align: left;
+            width: 50%;
+        }
+        .company-info p {
+            margin: 0;
+            line-height: 1.2;
+            font-size: 11px;
         }
         .invoice-info {
             text-align: right;
+            width: 50%;
+        }
+        .invoice-info p {
+            margin: 0;
+            line-height: 1.2;
+            font-size: 11px;
         }
         .client-info {
-            margin-bottom: 30px;
-            padding: 10px 0;
+            margin-bottom: 15px;
+            padding: 8px 0;
             border-top: 1px solid #ddd;
             border-bottom: 1px solid #ddd;
+        }
+        .client-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .client-info p {
+            margin: 0;
+            line-height: 1.2;
+            font-size: 11px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
+            font-size: 11px;
         }
         th {
             background-color: #f2f2f2;
             text-align: left;
-            padding: 10px;
+            padding: 6px 8px;
             border-bottom: 1px solid #ddd;
+            font-size: 11px;
+            font-weight: bold;
         }
+        th:nth-child(1) { width: 50%; }
+        th:nth-child(2) { width: 15%; text-align: center; }
+        th:nth-child(3) { width: 17.5%; text-align: right; }
+        th:nth-child(4) { width: 17.5%; text-align: right; }
         td {
-            padding: 10px;
+            padding: 6px 8px;
             border-bottom: 1px solid #ddd;
+            font-size: 11px;
         }
-        .text-right {
-            text-align: right;
-        }
+        td:nth-child(2) { text-align: center; }
+        td:nth-child(3), td:nth-child(4) { text-align: right; }
         .totals {
-            width: 300px;
-            margin-left: auto;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 11px;
         }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
+        .totals table {
+            width: 250px;
+            margin-left: auto;
+            border: none;
+            margin-bottom: 0;
+        }
+        .totals td {
+            border: none;
+            padding: 3px 0;
+            font-size: 11px;
+        }
+        .totals .label {
+            text-align: left;
+            width: 60%;
+        }
+        .totals .amount {
+            text-align: right;
+            width: 40%;
         }
         .grand-total {
             font-weight: bold;
             border-top: 1px solid #ddd;
-            padding-top: 5px;
+            padding-top: 3px;
+            font-size: 12px;
         }
         .notes {
-            margin-top: 30px;
+            margin-top: 15px;
             border-top: 1px solid #ddd;
-            padding-top: 10px;
+            padding-top: 8px;
+            font-size: 10px;
+        }
+        .banking-details {
+            margin-top: 15px;
+            border-top: 1px solid #ddd;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+            font-size: 10px;
+            line-height: 1.3;
         }
         .footer {
-            margin-top: 50px;
+            margin-top: 20px;
             text-align: center;
             color: #777;
             border-top: 1px solid #ddd;
-            padding-top: 20px;
+            padding-top: 10px;
+            font-size: 10px;
         }
     </style>
 </head>
 <body>
     <div class="invoice-header">
-        <div class="company-info">
-            <div class="invoice-title">' . $company['name'] . '</div>
-            <p>' . $company['email'] . '<br>' . nl2br($company['address']);
+        <table>
+            <tr>
+                <td class="company-info">
+                    <div class="invoice-title">' . $company['name'] . '</div>
+                    <p>' . $company['email'] . '<br>' . nl2br($company['address']);
             
 if (!empty($company['phone'])) {
     $html .= '<br>' . $company['phone'];
 }
 
 $html .= '
-            </p>
-        </div>
-        <div class="invoice-info">
-            <div class="invoice-title">INVOICE</div>
-            <p>
-                ' . $invoice['id'] . '<br>
-                Date: ' . formatDate($invoice['date']) . '<br>
-                Due: ' . formatDate($invoice['due_date']) . '
-            </p>
-        </div>
+                    </p>
+                </td>
+                <td class="invoice-info">
+                    <div class="invoice-title">INVOICE</div>
+                    <p>
+                        ' . $invoice['id'] . '<br>
+                        Date: ' . formatDate($invoice['date']) . '<br>
+                        Due: ' . formatDate($invoice['due_date']) . '
+                    </p>
+                </td>
+            </tr>
+        </table>
     </div>
     
     <div class="client-info">
-        <strong>Billed To:</strong><br>
-        ' . $invoice['client_name'] . '<br>
+        <h3>Billed To:</h3>
+        <p><strong>' . $invoice['client_name'] . '</strong><br>
         ' . $invoice['client_email'] . '<br>
-        ' . nl2br($invoice['client_address']) . '
+        ' . nl2br($invoice['client_address']) . '</p>
     </div>
     
     <table>
         <thead>
             <tr>
                 <th>Description</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
+                <th>Qty</th>
+                <th>Price</th>
                 <th>Amount</th>
             </tr>
         </thead>
@@ -179,8 +250,8 @@ foreach ($invoice['items'] as $item) {
             <tr>
                 <td>' . $item['description'] . '</td>
                 <td>' . number_format($item['quantity']) . '</td>
-                <td class="text-right">$' . number_format($item['price'], 2) . '</td>
-                <td class="text-right">$' . number_format($item['price'] * $item['quantity'], 2) . '</td>
+                <td>Rs.' . number_format($item['price'], 2) . '</td>
+                <td>Rs.' . number_format($item['price'] * $item['quantity'], 2) . '</td>
             </tr>';
 }
 
@@ -189,24 +260,26 @@ $html .= '
     </table>
     
     <div class="totals">
-        <div class="total-row">
-            <span>Subtotal:</span>
-            <span>$' . number_format($invoice['subtotal'], 2) . '</span>
-        </div>';
+        <table>
+            <tr>
+                <td class="label">Subtotal:</td>
+                <td class="amount">Rs.' . number_format($invoice['subtotal'], 2) . '</td>
+            </tr>';
 
 if ($invoice['apply_tax']) {
     $html .= '
-        <div class="total-row">
-            <span>Tax (18%):</span>
-            <span>$' . number_format($invoice['tax'], 2) . '</span>
-        </div>';
+            <tr>
+                <td class="label">Tax (18%):</td>
+                <td class="amount">Rs.' . number_format($invoice['tax'], 2) . '</td>
+            </tr>';
 }
 
 $html .= '
-        <div class="total-row grand-total">
-            <span>Grand Total:</span>
-            <span>$' . number_format($invoice['total'], 2) . '</span>
-        </div>
+            <tr class="grand-total">
+                <td class="label">Grand Total:</td>
+                <td class="amount">Rs.' . number_format($invoice['total'], 2) . '</td>
+            </tr>
+        </table>
     </div>';
 
 if (!empty($invoice['notes'])) {
@@ -214,6 +287,15 @@ if (!empty($invoice['notes'])) {
     <div class="notes">
         <strong>Notes:</strong><br>
         ' . nl2br($invoice['notes']) . '
+    </div>';
+}
+
+// Add banking details if available
+if (!empty($company['banking_details'])) {
+    $html .= '
+    <div class="banking-details">
+        <strong>Payment Details:</strong><br>
+        ' . nl2br($company['banking_details']) . '
     </div>';
 }
 
