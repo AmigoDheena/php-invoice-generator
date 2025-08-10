@@ -33,7 +33,7 @@ $pageTitle = 'Invoice ' . $invoice['id'];
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8" id="invoice-content">
+    <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent" id="invoice-content">
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800"><?php echo $pageTitle; ?></h1>

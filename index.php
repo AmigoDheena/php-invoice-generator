@@ -17,7 +17,7 @@ $invoices = getInvoices();
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent">
         <header class="mb-6">
             <h1 class="text-3xl font-bold text-gray-800">Invoice Generator</h1>
             <p class="text-gray-600">Create and manage your invoices easily</p>
