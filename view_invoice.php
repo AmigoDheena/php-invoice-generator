@@ -133,7 +133,7 @@ $pageTitle = 'Invoice ' . $invoice['id'];
             <?php if (!empty($company['banking_details'])): ?>
                 <div class="border-t border-gray-200 pt-4 mb-4 bg-gray-50 p-4 rounded">
                     <h3 class="text-gray-600 mb-2 font-semibold">Payment Details:</h3>
-                    <p class="text-gray-700 whitespace-pre-line"><?php echo $company['banking_details']; ?></p>
+                    <p class="text-gray-700 whitespace-pre-line"><?php echo nl2br(htmlspecialchars($company['banking_details'])); ?></p>
                 </div>
             <?php endif; ?>
             
