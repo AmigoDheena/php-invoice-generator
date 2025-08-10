@@ -56,7 +56,7 @@ $invoices = getInvoices();
                                     <td class="border p-2"><?php echo $invoice['id']; ?></td>
                                     <td class="border p-2"><?php echo $invoice['date']; ?></td>
                                     <td class="border p-2"><?php echo $invoice['client_name']; ?></td>
-                                    <td class="border p-2">$<?php echo number_format($invoice['total'], 2); ?></td>
+                                    <td class="border p-2">Rs.<?php echo number_format($invoice['total'], 2); ?></td>
                                     <td class="border p-2">
                                         <span class="px-2 py-1 rounded text-xs 
                                         <?php echo $invoice['status'] === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>">

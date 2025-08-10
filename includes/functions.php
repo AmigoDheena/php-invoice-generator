@@ -28,7 +28,8 @@ function initializeDataFiles() {
                 'name' => 'My Company',
                 'email' => 'info@mycompany.com',
                 'address' => '123 Business St, City, Country',
-                'phone' => '123-456-7890'
+                'phone' => '123-456-7890',
+                'banking_details' => ''
             ]
         ];
         file_put_contents(COMPANIES_FILE, json_encode($defaultCompany));

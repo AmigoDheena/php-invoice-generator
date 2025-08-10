@@ -193,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 item-price" required>
                                 </td>
                                 <td class="border p-2">
-                                    <span class="item-total">$<?php echo number_format($item['quantity'] * $item['price'], 2); ?></span>
+                                    <span class="item-total">Rs.<?php echo number_format($item['quantity'] * $item['price'], 2); ?></span>
                                 </td>
                                 <td class="border p-2">
                                     <button type="button" class="text-red-500 hover:text-red-700 delete-row">
@@ -216,15 +216,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="w-full md:w-64">
                     <div class="flex justify-between py-2">
                         <span class="font-medium">Subtotal:</span>
-                        <span id="subtotal">$<?php echo number_format($invoice['subtotal'], 2); ?></span>
+                        <span id="subtotal">Rs.<?php echo number_format($invoice['subtotal'], 2); ?></span>
                     </div>
                     <div class="flex justify-between py-2" id="tax-row" style="<?php echo $invoice['apply_tax'] ? '' : 'display: none;'; ?>">
                         <span class="font-medium">Tax (18%):</span>
-                        <span id="tax">$<?php echo number_format($invoice['tax'], 2); ?></span>
+                        <span id="tax">Rs.<?php echo number_format($invoice['tax'], 2); ?></span>
                     </div>
                     <div class="flex justify-between py-2 text-lg font-bold">
                         <span>Grand Total:</span>
-                        <span id="grand-total">$<?php echo number_format($invoice['total'], 2); ?></span>
+                        <span id="grand-total">Rs.<?php echo number_format($invoice['total'], 2); ?></span>
                     </div>
                 </div>
             </div>
@@ -266,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 item-price" required>
                     </td>
                     <td class="border p-2">
-                        <span class="item-total">$0.00</span>
+                        <span class="item-total">Rs.0.00</span>
                     </td>
                     <td class="border p-2">
                         <button type="button" class="text-red-500 hover:text-red-700 delete-row">
@@ -317,11 +317,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     const price = parseFloat(row.querySelector('.item-price').value) || 0;
                     const total = quantity * price;
                     
-                    row.querySelector('.item-total').textContent = '$' + total.toFixed(2);
+                    row.querySelector('.item-total').textContent = 'Rs.' + total.toFixed(2);
                     subtotal += total;
                 });
                 
-                document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+                document.getElementById('subtotal').textContent = 'Rs.' + subtotal.toFixed(2);
                 
                 const applyTax = document.querySelector('input[name="apply_tax"]').checked;
                 const taxRow = document.getElementById('tax-row');
@@ -334,8 +334,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     taxRow.style.display = 'none';
                 }
                 
-                document.getElementById('tax').textContent = '$' + tax.toFixed(2);
-                document.getElementById('grand-total').textContent = '$' + (subtotal + tax).toFixed(2);
+                document.getElementById('tax').textContent = 'Rs.' + tax.toFixed(2);
+                document.getElementById('grand-total').textContent = 'Rs.' + (subtotal + tax).toFixed(2);
             }
             
             // Toggle tax calculation

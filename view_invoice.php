@@ -100,25 +100,25 @@ $pageTitle = 'Invoice ' . $invoice['id'];
                         <tr>
                             <td class="text-left p-3 border-b"><?php echo $item['description']; ?></td>
                             <td class="text-right p-3 border-b"><?php echo number_format($item['quantity']); ?></td>
-                            <td class="text-right p-3 border-b">$<?php echo number_format($item['price'], 2); ?></td>
-                            <td class="text-right p-3 border-b">$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
+                            <td class="text-right p-3 border-b">Rs.<?php echo number_format($item['price'], 2); ?></td>
+                            <td class="text-right p-3 border-b">Rs.<?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-right p-3 font-semibold">Subtotal:</td>
-                        <td class="text-right p-3">$<?php echo number_format($invoice['subtotal'], 2); ?></td>
+                        <td class="text-right p-3">Rs.<?php echo number_format($invoice['subtotal'], 2); ?></td>
                     </tr>
                     <?php if ($invoice['apply_tax']): ?>
                         <tr>
                             <td colspan="3" class="text-right p-3 font-semibold">Tax (18%):</td>
-                            <td class="text-right p-3">$<?php echo number_format($invoice['tax'], 2); ?></td>
+                            <td class="text-right p-3">Rs.<?php echo number_format($invoice['tax'], 2); ?></td>
                         </tr>
                     <?php endif; ?>
                     <tr class="bg-gray-50">
                         <td colspan="3" class="text-right p-3 font-bold">Grand Total:</td>
-                        <td class="text-right p-3 font-bold">$<?php echo number_format($invoice['total'], 2); ?></td>
+                        <td class="text-right p-3 font-bold">Rs.<?php echo number_format($invoice['total'], 2); ?></td>
                     </tr>
                 </tfoot>
             </table>
@@ -127,6 +127,13 @@ $pageTitle = 'Invoice ' . $invoice['id'];
                 <div class="border-t border-gray-200 pt-4 mb-4">
                     <h3 class="text-gray-600 mb-2">Notes:</h3>
                     <p><?php echo nl2br($invoice['notes']); ?></p>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($company['banking_details'])): ?>
+                <div class="border-t border-gray-200 pt-4 mb-4 bg-gray-50 p-4 rounded">
+                    <h3 class="text-gray-600 mb-2 font-semibold">Payment Details:</h3>
+                    <p class="text-gray-700 whitespace-pre-line"><?php echo $company['banking_details']; ?></p>
                 </div>
             <?php endif; ?>
             
