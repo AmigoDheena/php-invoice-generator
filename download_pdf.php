@@ -258,7 +258,10 @@ $html = '
 $html .= '<div style="margin-bottom: 15px;">';
 
 // If GD extension is missing or not enabled, fall back to company name
-if (isset($gd_installed) && $gd_installed === false) {
+// Check if GD extension is loaded
+$gd_installed = extension_loaded('gd');
+// If GD extension is missing or not enabled, fall back to company name
+if (!$gd_installed) {
     $html .= '<div class="invoice-title">' . $company['name'] . '</div>';
     // Optionally add a small note about missing GD extension
     $html .= '<div style="font-size:8px; color:#999; margin-bottom:5px;">Note: Logo display requires PHP GD extension</div>';
