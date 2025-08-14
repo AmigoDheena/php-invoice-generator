@@ -29,10 +29,17 @@ function initializeDataFiles() {
                 'email' => 'info@mycompany.com',
                 'address' => '123 Business St, City, Country',
                 'phone' => '123-456-7890',
-                'banking_details' => ''
+                'banking_details' => '',
+                'logo' => '' // Empty logo path
             ]
         ];
         file_put_contents(COMPANIES_FILE, json_encode($defaultCompany));
+    }
+    
+    // Create logos directory if it doesn't exist
+    $logosDir = __DIR__ . '/../uploads/logos';
+    if (!file_exists($logosDir)) {
+        mkdir($logosDir, 0755, true);
     }
 }
 
@@ -186,6 +193,10 @@ function saveCompany($company) {
         $updated = false;
         foreach ($companies as $key => $existingCompany) {
             if ($existingCompany['id'] == $company['id']) {
+                // Preserve logo if not updated
+                if (!isset($company['logo']) && isset($existingCompany['logo'])) {
+                    $company['logo'] = $existingCompany['logo'];
+                }
                 $companies[$key] = $company;
                 $updated = true;
                 break;
