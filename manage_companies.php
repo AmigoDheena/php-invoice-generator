@@ -56,7 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (isset($_POST['remove_logo']) && $_POST['remove_logo'] === '1') {
                 // User wants to remove the logo - first delete the file if it exists
                 if (!empty($editCompany['logo']) && file_exists($editCompany['logo'])) {
-                    @unlink($editCompany['logo']);
+                    if (is_writable($editCompany['logo'])) {
+                        if (!unlink($editCompany['logo'])) {
+                            error_log("Failed to delete logo file: " . $editCompany['logo']);
+                        }
+                    } else {
+                        error_log("Logo file is not writable and cannot be deleted: " . $editCompany['logo']);
+                    }
                 }
                 $company['logo'] = '';
             }
