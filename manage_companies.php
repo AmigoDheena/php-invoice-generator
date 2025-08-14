@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Make sure the logo directory exists with correct permissions
                 $logoDir = 'uploads/logos/';
                 if (!is_dir($logoDir)) {
-                    mkdir($logoDir, 0777, true); // Full permissions to ensure server can read/write
+                    mkdir($logoDir, 0755, true); // Sufficient permissions for server, more secure
                 }
                 
                 // Clean the filename to avoid any special characters
