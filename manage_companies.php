@@ -24,6 +24,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'banking_details' => $_POST['banking_details'] ?? ''
             ];
             
+            // Handle logo upload
+            if (!empty($_FILES['logo']['name'])) {
+                // Make sure the logo directory exists with correct permissions
+                $logoDir = 'uploads/logos/';
+                if (!is_dir($logoDir)) {
+                    mkdir($logoDir, 0777, true); // Full permissions to ensure server can read/write
+                }
+                
+                // Clean the filename to avoid any special characters
+                $logoName = time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '', basename($_FILES['logo']['name']));
+                $logoPath = $logoDir . $logoName;
+                
+                // Check if the file is an image
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                $fileExt = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+                
+                if (in_array($fileExt, $allowedExtensions) && $_FILES['logo']['error'] === 0) {
+                    // Move the uploaded file to the logos directory
+                    if (move_uploaded_file($_FILES['logo']['tmp_name'], $logoPath)) {
+                        // Set file permissions to be readable by everyone
+                        chmod($logoPath, 0644);
+                        
+                        // Store the path in the company record
+                        $company['logo'] = $logoPath;
+                        
+                        // Debug message - uncomment if needed
+                        // echo "Logo uploaded to: " . $logoPath;
+                    }
+                }
+            } elseif (isset($_POST['remove_logo']) && $_POST['remove_logo'] === '1') {
+                // User wants to remove the logo - first delete the file if it exists
+                if (!empty($editCompany['logo']) && file_exists($editCompany['logo'])) {
+                    @unlink($editCompany['logo']);
+                }
+                $company['logo'] = '';
+            }
+            
             saveCompany($company);
             header('Location: manage_companies.php');
             exit;
@@ -52,9 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-gray-600">Add and manage your company profiles for invoices</p>
         </header>
         
-        <a href="index.php" class="inline-block mb-4 text-blue-500 hover:text-blue-700">
-            <i class="fas fa-arrow-left mr-2"></i>Back to Invoices
-        </a>
+        <div class="flex justify-between mb-4">
+            <a href="index.php" class="inline-block text-blue-500 hover:text-blue-700">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Invoices
+            </a>
+            <div>
+                <a href="logo_test.php" class="inline-block text-blue-500 hover:text-blue-700 mr-4">
+                    <i class="fas fa-wrench mr-2"></i>Logo Troubleshooting Tool
+                </a>
+                <?php if (!extension_loaded('gd')): ?>
+                <a href="enable_gd.php" class="inline-block text-red-500 hover:text-red-700">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Enable GD Extension
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
@@ -109,11 +158,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php echo $editCompany ? 'Edit Company' : 'Add New Company'; ?>
                     </h2>
                     
-                    <form action="manage_companies.php" method="post">
+                    <form action="manage_companies.php" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="<?php echo $editCompany ? 'update' : 'add'; ?>">
                         <?php if ($editCompany): ?>
                             <input type="hidden" name="company_id" value="<?php echo $editCompany['id']; ?>">
                         <?php endif; ?>
+                        
+                        <div class="mb-4">
+                            <label for="logo" class="block text-gray-700 font-medium mb-2">Company Logo</label>
+                            <input type="file" id="logo" name="logo" 
+                                   class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200" 
+                                   accept="image/png, image/jpeg, image/gif"
+                                   <?php echo !extension_loaded('gd') ? 'disabled' : ''; ?>>
+                            <small class="text-gray-500 block mt-1">Recommended size: 300x100px. Logo will replace company name in PDF invoices.</small>
+                            
+                            <?php if (!extension_loaded('gd')): ?>
+                                <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded">
+                                    <strong>Note:</strong> PHP GD extension is not installed. Logo functionality is disabled.
+                                    Contact your server administrator to install the GD extension for image support.
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php if ($editCompany && !empty($editCompany['logo']) && file_exists($editCompany['logo'])): ?>
+                                <div class="mt-3 border rounded p-3 bg-gray-50">
+                                    <p class="mb-2 text-sm">Current logo:</p>
+                                    <div class="flex items-center">
+                                        <img src="<?php echo $editCompany['logo']; ?>" alt="Company Logo" class="h-12 mr-3 border">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" name="remove_logo" value="1" class="mr-2">
+                                            Remove logo
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                         
                         <div class="mb-4">
                             <label for="name" class="block text-gray-700 font-medium mb-2">Company Name</label>
