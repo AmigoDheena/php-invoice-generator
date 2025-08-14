@@ -2,7 +2,13 @@
 // This is a helper script to check GD extension status and provide guidance
 
 // Security check - this should only be run locally
-if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
+$client_ip = $_SERVER['REMOTE_ADDR'];
+if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    // X-Forwarded-For can be a comma-separated list; take the first one
+    $forwarded_for = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    $client_ip = trim($forwarded_for);
+}
+if (!in_array($client_ip, ['127.0.0.1', '::1'])) {
     die("This script can only be run locally for security reasons.");
 }
 
