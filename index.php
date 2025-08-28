@@ -4,7 +4,9 @@ if (!function_exists('getInvoiceById')) {
     require_once 'includes/functions.php';
 }
 $pageTitle = 'Invoice Generator';
-$invoices = getInvoices();
+// Get invoices in descending order (newest first)
+$invoices = getInvoices(true);
+$companies = getCompanies();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -45,6 +47,7 @@ $invoices = getInvoices();
                                 <th class="border p-2 text-left">Invoice #</th>
                                 <th class="border p-2 text-left">Date</th>
                                 <th class="border p-2 text-left">Client</th>
+                                <th class="border p-2 text-left">Company</th>
                                 <th class="border p-2 text-left">Amount</th>
                                 <th class="border p-2 text-left">Status</th>
                                 <th class="border p-2 text-left">Actions</th>
@@ -56,6 +59,18 @@ $invoices = getInvoices();
                                     <td class="border p-2"><?php echo $invoice['id']; ?></td>
                                     <td class="border p-2"><?php echo $invoice['date']; ?></td>
                                     <td class="border p-2"><?php echo $invoice['client_name']; ?></td>
+                                    <td class="border p-2">
+                                        <?php 
+                                        $companyName = "Unknown";
+                                        foreach ($companies as $company) {
+                                            if ($company['id'] == $invoice['company_id']) {
+                                                $companyName = $company['name'];
+                                                break;
+                                            }
+                                        }
+                                        echo $companyName;
+                                        ?>
+                                    </td>
                                     <td class="border p-2">Rs.<?php echo number_format($invoice['total'], 2); ?></td>
                                     <td class="border p-2">
                                         <span class="px-2 py-1 rounded text-xs 

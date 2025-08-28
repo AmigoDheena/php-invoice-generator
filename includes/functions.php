@@ -47,10 +47,19 @@ function initializeDataFiles() {
 
 // Get all invoices
 if (!function_exists('getInvoices')) {
-function getInvoices() {
+function getInvoices($orderDesc = false) {
     initializeDataFiles();
     $data = file_get_contents(INVOICES_FILE);
-    return json_decode($data, true) ?: [];
+    $invoices = json_decode($data, true) ?: [];
+    
+    if ($orderDesc) {
+        // Sort invoices in descending order by ID (newest first)
+        usort($invoices, function($a, $b) {
+            return strcmp($b['id'], $a['id']);
+        });
+    }
+    
+    return $invoices;
 }
 }
 
