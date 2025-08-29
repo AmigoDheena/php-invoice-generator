@@ -20,7 +20,8 @@ if (!$invoice) {
 }
 
 $company = getCompanyById($invoice['company_id']);
-$pageTitle = 'Invoice ' . $invoice['id'];
+$documentType = $invoice['document_type'] ?? 'Invoice';
+$pageTitle = $documentType . ' ' . $invoice['id'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -72,7 +73,7 @@ $pageTitle = 'Invoice ' . $invoice['id'];
                     <?php endif; ?>
                 </div>
                 <div class="text-right">
-                    <h1 class="text-3xl font-bold mb-2">INVOICE</h1>
+                    <h1 class="text-3xl font-bold mb-2"><?php echo strtoupper($invoice['document_type'] ?? 'INVOICE'); ?></h1>
                     <p class="text-gray-600"><?php echo $invoice['id']; ?></p>
                     <p class="text-gray-600">Date: <?php echo formatDate($invoice['date']); ?></p>
                     <p class="text-gray-600">Due: <?php echo formatDate($invoice['due_date']); ?></p>

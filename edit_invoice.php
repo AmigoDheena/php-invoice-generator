@@ -3,8 +3,6 @@
 if (!function_exists('getInvoiceById')) {
     require_once 'includes/functions.php';
 }
-$pageTitle = 'Edit Invoice';
-
 // Check if ID is provided
 if (!isset($_GET['id'])) {
     header('Location: index.php');
@@ -13,6 +11,9 @@ if (!isset($_GET['id'])) {
 
 $invoiceId = $_GET['id'];
 $invoice = getInvoiceById($invoiceId);
+
+$documentType = $invoice['document_type'] ?? 'Invoice';
+$pageTitle = 'Edit ' . $documentType;
 
 // If invoice not found, redirect to index
 if (!$invoice) {
@@ -34,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'client_address' => $_POST['client_address'],
         'company_id' => $_POST['company_id'],
         'apply_tax' => isset($_POST['apply_tax']),
+        'document_type' => $_POST['document_type'],
         'items' => [],
         'notes' => $_POST['notes'],
         'status' => $_POST['status']
@@ -82,11 +84,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent">
         <header class="mb-6">
             <h1 class="text-3xl font-bold text-gray-800"><?php echo $pageTitle; ?></h1>
-            <p class="text-gray-600">Edit invoice <?php echo $invoice['id']; ?></p>
+            <p class="text-gray-600">Edit <?php echo strtolower($documentType); ?> <?php echo $invoice['id']; ?></p>
         </header>
         
         <a href="view_invoice.php?id=<?php echo $invoiceId; ?>" class="inline-block mb-4 text-blue-500 hover:text-blue-700">
-            <i class="fas fa-arrow-left mr-2"></i>Back to Invoice
+            <i class="fas fa-arrow-left mr-2"></i>Back to <?php echo $documentType; ?>
         </a>
         
         <form action="edit_invoice.php?id=<?php echo $invoiceId; ?>" method="post" class="bg-white rounded-lg shadow-md p-6">
@@ -144,6 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fas fa-plus mr-1"></i>Add New Company
                             </a>
                         </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="document_type" class="block text-gray-700 font-medium mb-2">Document Type</label>
+                        <select id="document_type" name="document_type" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200" required>
+                            <option value="Invoice" <?php echo ($invoice['document_type'] ?? 'Invoice') === 'Invoice' ? 'selected' : ''; ?>>Invoice</option>
+                            <option value="Quotation" <?php echo ($invoice['document_type'] ?? 'Invoice') === 'Quotation' ? 'selected' : ''; ?>>Quotation</option>
+                        </select>
                     </div>
                     
                     <div class="mb-4">
@@ -239,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="view_invoice.php?id=<?php echo $invoiceId; ?>" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded mr-2">
                     Cancel
                 </a>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                <button type="submit" id="submit-button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                     Update Invoice
                 </button>
             </div>
@@ -340,6 +350,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Toggle tax calculation
             document.querySelector('input[name="apply_tax"]').addEventListener('change', calculateTotals);
+            
+            // Update button text based on document type selection
+            const documentTypeSelect = document.getElementById('document_type');
+            const submitButton = document.getElementById('submit-button');
+            
+            function updateButtonText() {
+                submitButton.textContent = 'Update ' + documentTypeSelect.value;
+            }
+            
+            documentTypeSelect.addEventListener('change', updateButtonText);
+            updateButtonText(); // Initialize button text
             
             // Attach listeners to existing rows
             document.querySelectorAll('.item-row').forEach(function(row) {

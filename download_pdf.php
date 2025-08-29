@@ -323,7 +323,7 @@ $html .= '
                     </p>
                 </td>
                 <td class="invoice-info">
-                    <div class="invoice-title">INVOICE</div>
+                    <div class="invoice-title">' . ($invoice['document_type'] ?? 'INVOICE') . '</div>
                     <div class="invoice-id">' . $invoice['id'] . '</div>
                     <p>
                         Issue Date: ' . formatDate($invoice['date']) . '<br>
@@ -425,7 +425,8 @@ $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
 // Set the PDF filename
-$filename = 'Invoice_' . str_replace(['INV-', ' '], ['', '_'], $invoice['id']) . '.pdf';
+$documentType = $invoice['document_type'] ?? 'Invoice';
+$filename = $documentType . '_' . str_replace(['INV-', ' '], ['', '_'], $invoice['id']) . '.pdf';
 
 // Output the generated PDF
 $dompdf->stream($filename, ['Attachment' => true]);

@@ -16,6 +16,7 @@ $invoice = [
     'client_address' => '',
     'company_id' => $companies[0]['id'] ?? '',
     'apply_tax' => true,
+    'document_type' => 'Invoice',
     'items' => [
         [
             'description' => '',
@@ -39,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'client_address' => $_POST['client_address'],
         'company_id' => $_POST['company_id'],
         'apply_tax' => isset($_POST['apply_tax']),
+        'document_type' => $_POST['document_type'],
         'items' => [],
         'notes' => $_POST['notes'],
         'status' => $_POST['status']
@@ -152,6 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="mb-4">
+                        <label for="document_type" class="block text-gray-700 font-medium mb-2">Document Type</label>
+                        <select id="document_type" name="document_type" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200" required>
+                            <option value="Invoice" <?php echo $invoice['document_type'] === 'Invoice' ? 'selected' : ''; ?>>Invoice</option>
+                            <option value="Quotation" <?php echo $invoice['document_type'] === 'Quotation' ? 'selected' : ''; ?>>Quotation</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
                         <label for="status" class="block text-gray-700 font-medium mb-2">Status</label>
                         <select id="status" name="status" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200" required>
                             <option value="Unpaid" <?php echo $invoice['status'] === 'Unpaid' ? 'selected' : ''; ?>>Unpaid</option>
@@ -244,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="index.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded mr-2">
                     Cancel
                 </a>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                <button type="submit" id="submit-button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                     Create Invoice
                 </button>
             </div>
@@ -345,6 +355,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Toggle tax calculation
             document.querySelector('input[name="apply_tax"]').addEventListener('change', calculateTotals);
+            
+            // Update button text based on document type selection
+            const documentTypeSelect = document.getElementById('document_type');
+            const submitButton = document.getElementById('submit-button');
+            
+            function updateButtonText() {
+                submitButton.textContent = 'Create ' + documentTypeSelect.value;
+            }
+            
+            documentTypeSelect.addEventListener('change', updateButtonText);
+            updateButtonText(); // Initialize button text
             
             // Attach listeners to existing rows
             document.querySelectorAll('.item-row').forEach(function(row) {

@@ -44,7 +44,8 @@ $companies = getCompanies();
                     <table class="w-full border-collapse">
                         <thead>
                             <tr class="bg-gray-100">
-                                <th class="border p-2 text-left">Invoice #</th>
+                                <th class="border p-2 text-left">Doc #</th>
+                                <th class="border p-2 text-left">Type</th>
                                 <th class="border p-2 text-left">Date</th>
                                 <th class="border p-2 text-left">Client</th>
                                 <th class="border p-2 text-left">Company</th>
@@ -57,6 +58,7 @@ $companies = getCompanies();
                             <?php foreach ($invoices as $invoice): ?>
                                 <tr class="hover:bg-gray-50">
                                     <td class="border p-2"><?php echo $invoice['id']; ?></td>
+                                    <td class="border p-2"><?php echo $invoice['document_type'] ?? 'Invoice'; ?></td>
                                     <td class="border p-2"><?php echo $invoice['date']; ?></td>
                                     <td class="border p-2"><?php echo $invoice['client_name']; ?></td>
                                     <td class="border p-2">
