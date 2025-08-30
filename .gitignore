@@ -9,3 +9,5 @@
 Thumbs.db
 *.log
 .vscode/
+/uploads
+/.github/prompts
