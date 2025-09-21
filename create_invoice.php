@@ -10,7 +10,7 @@ $companies = getCompanies();
 $invoice = [
     'id' => '',
     'date' => date('Y-m-d'),
-    'due_date' => date('Y-m-d', strtotime('+30 days')),
+    'due_date' => date('Y-m-d', strtotime('+7 days')),
     'client_name' => '',
     'client_email' => '',
     'client_address' => '',
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="mb-4">
                         <label for="client_email" class="block text-gray-700 font-medium mb-2">Email (Email To)</label>
-                        <input type="email" id="client_email" name="client_email" value="<?php echo $invoice['client_email']; ?>" 
+                        <input type="text" id="client_email" name="client_email" value="<?php echo $invoice['client_email']; ?>" 
                                class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200" required>
                     </div>
                     
