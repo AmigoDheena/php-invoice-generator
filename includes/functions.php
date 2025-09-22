@@ -45,9 +45,9 @@ function initializeDataFiles() {
 
 }
 
-// Get all invoices
+// Get all invoices with optional pagination
 if (!function_exists('getInvoices')) {
-function getInvoices($orderDesc = false) {
+function getInvoices($orderDesc = false, $page = null, $perPage = 10) {
     initializeDataFiles();
     $data = file_get_contents(INVOICES_FILE);
     $invoices = json_decode($data, true) ?: [];
@@ -57,6 +57,21 @@ function getInvoices($orderDesc = false) {
         usort($invoices, function($a, $b) {
             return strcmp($b['id'], $a['id']);
         });
+    }
+    
+    // If pagination is requested
+    if ($page !== null) {
+        $totalItems = count($invoices);
+        $offset = ($page - 1) * $perPage;
+        $invoices = array_slice($invoices, $offset, $perPage);
+        
+        return [
+            'data' => $invoices,
+            'total' => $totalItems,
+            'perPage' => $perPage,
+            'currentPage' => $page,
+            'lastPage' => ceil($totalItems / $perPage)
+        ];
     }
     
     return $invoices;
@@ -249,6 +264,16 @@ function formatCurrency($amount) {
 if (!function_exists('formatDate')) {
 function formatDate($date) {
     return date('F j, Y', strtotime($date));
+}
+}
+
+// Get total count of invoices
+if (!function_exists('getInvoiceCount')) {
+function getInvoiceCount() {
+    initializeDataFiles();
+    $data = file_get_contents(INVOICES_FILE);
+    $invoices = json_decode($data, true) ?: [];
+    return count($invoices);
 }
 }
 

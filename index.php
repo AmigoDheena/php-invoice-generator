@@ -4,8 +4,18 @@ if (!function_exists('getInvoiceById')) {
     require_once 'includes/functions.php';
 }
 $pageTitle = 'Invoice Generator';
-// Get invoices in descending order (newest first)
-$invoices = getInvoices(true);
+
+// Pagination setup
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$perPage = 10;
+
+// Get invoices in descending order with pagination
+$result = getInvoices(true, $page, $perPage);
+$invoices = $result['data'];
+$totalInvoices = $result['total'];
+$lastPage = $result['lastPage'];
+
 $companies = getCompanies();
 ?>
 <!DOCTYPE html>
@@ -101,6 +111,56 @@ $companies = getCompanies();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    
+                    <!-- Pagination -->
+                    <?php if ($lastPage > 1): ?>
+                    <div class="mt-6 flex justify-between items-center">
+                        <div class="text-sm text-gray-500">
+                            Showing <?php echo ($page-1)*$perPage+1; ?> to <?php echo min($page*$perPage, $totalInvoices); ?> of <?php echo $totalInvoices; ?> invoices
+                        </div>
+                        <div class="flex space-x-1">
+                            <?php if ($page > 1): ?>
+                            <a href="?page=1" class="px-3 py-1 rounded border bg-white hover:bg-gray-50">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                            <a href="?page=<?php echo $page-1; ?>" class="px-3 py-1 rounded border bg-white hover:bg-gray-50">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                            <?php endif; ?>
+                            
+                            <?php
+                            // Calculate range of page numbers to show
+                            $startPage = max(1, $page - 2);
+                            $endPage = min($lastPage, $page + 2);
+                            
+                            // Always show at least 5 pages if available
+                            if ($endPage - $startPage < 4 && $lastPage > 4) {
+                                if ($startPage == 1) {
+                                    $endPage = min($lastPage, 5);
+                                } elseif ($endPage == $lastPage) {
+                                    $startPage = max(1, $lastPage - 4);
+                                }
+                            }
+                            
+                            for ($i = $startPage; $i <= $endPage; $i++): 
+                            ?>
+                                <a href="?page=<?php echo $i; ?>" 
+                                   class="px-3 py-1 rounded border <?php echo $i == $page ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-50'; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            <?php endfor; ?>
+                            
+                            <?php if ($page < $lastPage): ?>
+                            <a href="?page=<?php echo $page+1; ?>" class="px-3 py-1 rounded border bg-white hover:bg-gray-50">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                            <a href="?page=<?php echo $lastPage; ?>" class="px-3 py-1 rounded border bg-white hover:bg-gray-50">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>

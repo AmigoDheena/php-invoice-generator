@@ -57,6 +57,17 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - **Manage Companies:** Add or edit your own company profiles under "Manage Companies". You can now add banking details for payment info.
 - **No Database:** All data is stored in `/data` as JSON files. You can back up or move your data easily.
 
+## Pagination
+
+- The dashboard (`index.php`) now supports pagination for the invoices list. By default the dashboard shows **10 invoices per page** to keep the list fast and easy to navigate.
+- Use the `page` query parameter to navigate pages.
+- The pagination control shows previous/next, first/last buttons and a range of page numbers (up to 5 visible at once). The current page is highlighted.
+- If you want to change the number of invoices per page, edit the `$perPage` variable in `index.php` (search for `$perPage = 10;`). You can also update the `getInvoices()` call signature in `includes/functions.php` if you need more advanced control.
+
+Notes:
+- Pagination is implemented server-side by slicing the JSON invoice array. For very large datasets you may want to switch to a database-backed approach for better performance.
+
+
 ## File Structure
 
 - `/index.php` — Dashboard (list invoices)
