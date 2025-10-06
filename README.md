@@ -106,6 +106,14 @@ Notes:
 
 - `/data/` and `/vendor/` are ignored by default (see `.gitignore`).
 
+## Contributors
+
+- **Lead Developer:** [AmigoDheena](https://github.com/AmigoDheena)
+
 ## License
 
 MIT License. Free for personal and commercial use.
+
+## Credits
+
+This project was developed by [AmigoDheena](https://github.com/AmigoDheena). If you find this project useful, please consider starring the repository on GitHub or contributing to its development.

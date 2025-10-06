@@ -609,8 +609,28 @@ $companies = getCompanies();
         from { opacity: 0; }
         to { opacity: 1; }
     }
+    }
+    /* Footer styles */
+    .footer {
+        margin-top: 3rem;
+        padding: 1.5rem 0;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+        color: #6b7280;
+    }
+    .footer a {
+        color: #3b82f6;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .footer a:hover {
+        color: #2563eb;
+        text-decoration: underline;
+    }
     </style>
 
     <script src="assets/js/main.js"></script>
+    
+    <?php include_once 'includes/footer.php'; ?>
 </body>
 </html>
