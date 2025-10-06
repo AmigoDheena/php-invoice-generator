@@ -35,82 +35,6 @@ $companies = getCompanies();
             <p class="text-gray-600">Create and manage your invoices easily</p>
         </header>
 
-        <!-- Dashboard Charts Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="dashboard-container">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold">Dashboard</h2>
-                <button id="toggleCharts" class="text-sm text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-chevron-up"></i> Hide Charts
-                </button>
-            </div>
-            
-            <div id="chartsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Monthly Revenue Chart -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-md font-medium">Monthly Revenue</h3>
-                        <span class="text-sm text-gray-500" title="Shows paid vs. outstanding revenue over the last 6 months">
-                            <i class="fas fa-info-circle"></i>
-                        </span>
-                    </div>
-                    <div class="h-64 chart-container">
-                        <div class="loading-indicator">
-                            <i class="fas fa-spinner fa-spin"></i> Loading...
-                        </div>
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Invoice Status Chart -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-md font-medium">Invoice Status</h3>
-                        <span class="text-sm text-gray-500" title="Distribution of paid vs. unpaid invoices">
-                            <i class="fas fa-info-circle"></i>
-                        </span>
-                    </div>
-                    <div class="h-64 chart-container">
-                        <div class="loading-indicator">
-                            <i class="fas fa-spinner fa-spin"></i> Loading...
-                        </div>
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Document Type Analysis -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-md font-medium">Document Types</h3>
-                        <span class="text-sm text-gray-500" title="Comparison of invoices vs. quotations">
-                            <i class="fas fa-info-circle"></i>
-                        </span>
-                    </div>
-                    <div class="h-64 chart-container">
-                        <div class="loading-indicator">
-                            <i class="fas fa-spinner fa-spin"></i> Loading...
-                        </div>
-                        <canvas id="documentTypeChart"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Top Clients Chart -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-md font-medium">Top 5 Clients</h3>
-                        <span class="text-sm text-gray-500" title="Clients with highest total invoice values">
-                            <i class="fas fa-info-circle"></i>
-                        </span>
-                    </div>
-                    <div class="h-64 chart-container">
-                        <div class="loading-indicator">
-                            <i class="fas fa-spinner fa-spin"></i> Loading...
-                        </div>
-                        <canvas id="clientChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="flex justify-between mb-6">
             <a href="create_invoice.php" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 <i class="fas fa-plus mr-2"></i>Create New Invoice
@@ -120,12 +44,106 @@ $companies = getCompanies();
             </a>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold mb-4">Your Invoices</h2>
-            
-            <?php if (empty($invoices)): ?>
-                <p class="text-gray-500">You haven't created any invoices yet.</p>
-            <?php else: ?>
+        <!-- Tabbed Interface -->
+        <div class="bg-white rounded-lg shadow-md">
+            <!-- Tab Navigation -->
+            <div class="border-b">
+                <div class="flex">
+                    <button class="tab-button py-3 px-6 border-b-2 border-blue-500 font-medium text-blue-600 bg-white" data-tab="invoices">
+                        <i class="fas fa-file-invoice mr-2"></i>Invoices
+                    </button>
+                    <button class="tab-button py-3 px-6 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 bg-white" data-tab="dashboard">
+                        <i class="fas fa-chart-bar mr-2"></i>Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-content" id="dashboard-tab" style="display: none;">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Analytics Dashboard</h2>
+                        <button id="toggleCharts" class="text-sm text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-chevron-up"></i> Hide Charts
+                        </button>
+                    </div>
+                    
+                    <div id="chartsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Monthly Revenue Chart -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-md font-medium">Monthly Revenue</h3>
+                                <span class="text-sm text-gray-500" title="Shows paid vs. outstanding revenue over the last 6 months">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                            </div>
+                            <div class="h-64 chart-container">
+                                <div class="loading-indicator">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Invoice Status Chart -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-md font-medium">Invoice Status</h3>
+                                <span class="text-sm text-gray-500" title="Distribution of paid vs. unpaid invoices">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                            </div>
+                            <div class="h-64 chart-container">
+                                <div class="loading-indicator">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Document Type Analysis -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-md font-medium">Document Types</h3>
+                                <span class="text-sm text-gray-500" title="Comparison of invoices vs. quotations">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                            </div>
+                            <div class="h-64 chart-container">
+                                <div class="loading-indicator">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
+                                <canvas id="documentTypeChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Top Clients Chart -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-md font-medium">Top 5 Clients</h3>
+                                <span class="text-sm text-gray-500" title="Clients with highest total invoice values">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                            </div>
+                            <div class="h-64 chart-container">
+                                <div class="loading-indicator">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
+                                <canvas id="clientChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice List Tab (shown by default) -->
+            <div class="tab-content" id="invoices-tab">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4">Your Invoices</h2>
+                    
+                    <?php if (empty($invoices)): ?>
+                        <p class="text-gray-500">You haven't created any invoices yet.</p>
+                    <?php else: ?>
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse">
                         <thead>
@@ -239,12 +257,54 @@ $companies = getCompanies();
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
+                </div>
+            </div>
         </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        function switchTab(tabId) {
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            tabButtons.forEach(button => {
+                button.classList.remove('border-blue-500', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show the selected tab content
+            document.getElementById(tabId + '-tab').style.display = 'block';
+            
+            // Add active class to the clicked button
+            document.querySelector(`[data-tab="${tabId}"]`).classList.remove('border-transparent', 'text-gray-500');
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('border-blue-500', 'text-blue-600');
+            
+            // If switching to dashboard, ensure charts are properly rendered
+            if(tabId === 'dashboard') {
+                window.dispatchEvent(new Event('resize'));
+            }
+        }
+        
+        // Add click event to tab buttons
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+        
+        // Set default tab to invoices
+        switchTab('invoices');
         // Initial setup - hide loading indicators when charts are ready
         const hideLoading = (chartId) => {
             const container = document.querySelector(`#${chartId}`).closest('.chart-container');
@@ -526,6 +586,28 @@ $companies = getCompanies();
         justify-content: center;
         background: rgba(255, 255, 255, 0.8);
         z-index: 5;
+    }
+    .tab-button {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    .tab-button:hover {
+        background-color: #f9fafb;
+    }
+    .tab-button.active {
+        border-bottom-color: #3B82F6;
+        color: #2563EB;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     </style>
 
