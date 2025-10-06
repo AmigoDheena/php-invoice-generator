@@ -35,6 +35,82 @@ $companies = getCompanies();
             <p class="text-gray-600">Create and manage your invoices easily</p>
         </header>
 
+        <!-- Dashboard Charts Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="dashboard-container">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Dashboard</h2>
+                <button id="toggleCharts" class="text-sm text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-chevron-up"></i> Hide Charts
+                </button>
+            </div>
+            
+            <div id="chartsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Monthly Revenue Chart -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-md font-medium">Monthly Revenue</h3>
+                        <span class="text-sm text-gray-500" title="Shows paid vs. outstanding revenue over the last 6 months">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </div>
+                    <div class="h-64 chart-container">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Invoice Status Chart -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-md font-medium">Invoice Status</h3>
+                        <span class="text-sm text-gray-500" title="Distribution of paid vs. unpaid invoices">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </div>
+                    <div class="h-64 chart-container">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Document Type Analysis -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-md font-medium">Document Types</h3>
+                        <span class="text-sm text-gray-500" title="Comparison of invoices vs. quotations">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </div>
+                    <div class="h-64 chart-container">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                        <canvas id="documentTypeChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Top Clients Chart -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-md font-medium">Top 5 Clients</h3>
+                        <span class="text-sm text-gray-500" title="Clients with highest total invoice values">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </div>
+                    <div class="h-64 chart-container">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                        <canvas id="clientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-between mb-6">
             <a href="create_invoice.php" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 <i class="fas fa-plus mr-2"></i>Create New Invoice
@@ -165,6 +241,293 @@ $companies = getCompanies();
             <?php endif; ?>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial setup - hide loading indicators when charts are ready
+        const hideLoading = (chartId) => {
+            const container = document.querySelector(`#${chartId}`).closest('.chart-container');
+            if (container) {
+                const loader = container.querySelector('.loading-indicator');
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+            }
+        };
+
+        // Chart color schemes
+        const chartColors = {
+            blue: '#3B82F6',
+            green: '#10B981',
+            yellow: '#F59E0B',
+            red: '#EF4444',
+            purple: '#8B5CF6',
+            gray: '#6B7280'
+        };
+        
+        // Toggle charts visibility
+        const toggleBtn = document.getElementById('toggleCharts');
+        const chartsContainer = document.getElementById('chartsContainer');
+        
+        toggleBtn.addEventListener('click', function() {
+            chartsContainer.classList.toggle('hidden');
+            if (chartsContainer.classList.contains('hidden')) {
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show Charts';
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Charts';
+            }
+        });
+        
+        // 1. Monthly Revenue Chart
+        const revenueChartCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueChartCtx, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode(array_keys(getMonthlyRevenueSummary())); ?>,
+                datasets: [
+                    {
+                        label: 'Paid',
+                        data: <?php 
+                            $data = array_column(getMonthlyRevenueSummary(), 'paid');
+                            echo json_encode(array_values($data)); 
+                        ?>,
+                        backgroundColor: chartColors.green
+                    },
+                    {
+                        label: 'Unpaid',
+                        data: <?php 
+                            $data = array_column(getMonthlyRevenueSummary(), 'unpaid');
+                            echo json_encode(array_values($data)); 
+                        ?>,
+                        backgroundColor: chartColors.yellow
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += 'Rs.' + context.parsed.y.toFixed(2);
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rs.' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        hideLoading('revenueChart');
+        
+        // 2. Invoice Status Chart
+        const statusData = <?php echo json_encode(getInvoiceStatusBreakdown()); ?>;
+        const statusChartCtx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(statusChartCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusData),
+                datasets: [{
+                    data: Object.values(statusData),
+                    backgroundColor: [chartColors.green, chartColors.yellow],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label;
+                                const value = context.raw;
+                                const total = Object.values(statusData).reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+        hideLoading('statusChart');
+        
+        // 3. Document Type Analysis Chart
+        const docTypeData = <?php echo json_encode(getDocumentTypeAnalysis()); ?>;
+        const docTypeChartCtx = document.getElementById('documentTypeChart').getContext('2d');
+        const docTypeChart = new Chart(docTypeChartCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(docTypeData),
+                datasets: [
+                    {
+                        label: 'Count',
+                        data: Object.values(docTypeData).map(item => item.count),
+                        backgroundColor: chartColors.blue,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Value',
+                        data: Object.values(docTypeData).map(item => item.value),
+                        backgroundColor: chartColors.purple,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.dataset.label === 'Value') {
+                                    label += 'Rs.' + context.parsed.y.toFixed(2);
+                                } else {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Value (Rs.)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rs.' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        hideLoading('documentTypeChart');
+        
+        // 4. Top Clients Chart
+        const clientData = <?php echo json_encode(getTopClientsByValue()); ?>;
+        const clientLabels = Object.keys(clientData);
+        const clientValues = Object.values(clientData);
+        
+        const clientChartCtx = document.getElementById('clientChart').getContext('2d');
+        const clientChart = new Chart(clientChartCtx, {
+            type: 'bar',
+            data: {
+                labels: clientLabels,
+                datasets: [{
+                    label: 'Total Invoice Value',
+                    data: clientValues,
+                    backgroundColor: clientLabels.map((_, i) => {
+                        const colors = [chartColors.blue, chartColors.purple, chartColors.green, chartColors.yellow, chartColors.red];
+                        return colors[i % colors.length];
+                    }),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += 'Rs.' + context.parsed.x.toFixed(2);
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rs.' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        hideLoading('clientChart');
+    });
+    </script>
+    <style>
+    .chart-container {
+        position: relative;
+    }
+    .loading-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 5;
+    }
+    </style>
 
     <script src="assets/js/main.js"></script>
 </body>

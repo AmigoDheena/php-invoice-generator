@@ -310,6 +310,95 @@ function getUniqueClients() {
 }
 }
 
+// Get monthly revenue data for charts
+if (!function_exists('getMonthlyRevenueSummary')) {
+function getMonthlyRevenueSummary($limit = 6) {
+    $invoices = getInvoices();
+    $monthly = [];
+    
+    // Sort invoices by date (oldest first)
+    usort($invoices, function($a, $b) {
+        return strcmp($a['date'], $b['date']);
+    });
+    
+    foreach ($invoices as $invoice) {
+        $month = date('M Y', strtotime($invoice['date']));
+        
+        if (!isset($monthly[$month])) {
+            $monthly[$month] = ['paid' => 0, 'unpaid' => 0];
+        }
+        
+        if ($invoice['status'] === 'Paid') {
+            $monthly[$month]['paid'] += $invoice['total'];
+        } else {
+            $monthly[$month]['unpaid'] += $invoice['total'];
+        }
+    }
+    
+    // Return the last X months
+    if (count($monthly) > $limit) {
+        $monthly = array_slice($monthly, -$limit, $limit, true);
+    }
+    
+    return $monthly;
+}
+}
+
+// Get invoice status distribution for pie chart
+if (!function_exists('getInvoiceStatusBreakdown')) {
+function getInvoiceStatusBreakdown() {
+    $invoices = getInvoices();
+    $status = ['Paid' => 0, 'Unpaid' => 0];
+    
+    foreach ($invoices as $invoice) {
+        $status[$invoice['status']] += 1;
+    }
+    
+    return $status;
+}
+}
+
+// Get document type analysis (invoice vs quotation)
+if (!function_exists('getDocumentTypeAnalysis')) {
+function getDocumentTypeAnalysis() {
+    $invoices = getInvoices();
+    $types = [
+        'Invoice' => ['count' => 0, 'value' => 0],
+        'Quotation' => ['count' => 0, 'value' => 0]
+    ];
+    
+    foreach ($invoices as $invoice) {
+        $type = isset($invoice['document_type']) ? $invoice['document_type'] : 'Invoice';
+        $types[$type]['count'] += 1;
+        $types[$type]['value'] += $invoice['total'];
+    }
+    
+    return $types;
+}
+}
+
+// Get top clients by invoice value
+if (!function_exists('getTopClientsByValue')) {
+function getTopClientsByValue($limit = 5) {
+    $invoices = getInvoices();
+    $clients = [];
+    
+    foreach ($invoices as $invoice) {
+        $clientName = $invoice['client_name'];
+        if (!isset($clients[$clientName])) {
+            $clients[$clientName] = 0;
+        }
+        $clients[$clientName] += $invoice['total'];
+    }
+    
+    // Sort by value (highest first)
+    arsort($clients);
+    
+    // Take top X clients
+    return array_slice($clients, 0, $limit, true);
+}
+}
+
 // Initialize data files, but only if this is the first time the file is included
 // This prevents double initialization when using composer's autoloader
 if (!defined('DATA_INITIALIZED')) {
