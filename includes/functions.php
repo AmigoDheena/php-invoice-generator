@@ -277,6 +277,39 @@ function getInvoiceCount() {
 }
 }
 
+// Get all unique clients from invoices for reuse
+if (!function_exists('getUniqueClients')) {
+function getUniqueClients() {
+    $invoices = getInvoices();
+    $clients = [];
+    $clientEmails = []; // Track emails to avoid duplicates
+    
+    foreach ($invoices as $invoice) {
+        // Skip if no email or if we've already added this client
+        if (empty($invoice['client_email']) || in_array($invoice['client_email'], $clientEmails)) {
+            continue;
+        }
+        
+        // Add to unique clients list
+        $clients[] = [
+            'name' => $invoice['client_name'],
+            'email' => $invoice['client_email'],
+            'address' => $invoice['client_address']
+        ];
+        
+        // Add to emails tracker
+        $clientEmails[] = $invoice['client_email'];
+    }
+    
+    // Sort by client name alphabetically
+    usort($clients, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
+    });
+    
+    return $clients;
+}
+}
+
 // Initialize data files, but only if this is the first time the file is included
 // This prevents double initialization when using composer's autoloader
 if (!defined('DATA_INITIALIZED')) {

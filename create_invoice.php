@@ -5,6 +5,7 @@ if (!function_exists('getInvoiceById')) {
 }
 $pageTitle = 'Create Invoice';
 $companies = getCompanies();
+$uniqueClients = getUniqueClients(); // Get the list of unique clients
 
 // Default values
 $invoice = [
@@ -102,6 +103,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <h2 class="text-xl font-semibold mb-4">Client Information</h2>
+                    
+                    <?php if (!empty($uniqueClients)): ?>
+                    <div class="mb-4">
+                        <label for="client_select" class="block text-gray-700 font-medium mb-2">Select Existing Client</label>
+                        <div class="flex gap-2">
+                            <select id="client_select" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-blue-500 focus:ring focus:ring-blue-200">
+                                <option value="">-- New Client --</option>
+                                <?php foreach ($uniqueClients as $index => $client): ?>
+                                <option value="<?php echo $index; ?>"><?php echo htmlspecialchars($client['name']); ?> (<?php echo htmlspecialchars($client['email']); ?>)</option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="button" id="clear_client" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded">Clear</button>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">Select a client or enter new client details below</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="mb-4">
                         <label for="client_name" class="block text-gray-700 font-medium mb-2">Company Name (Invoice To)</label>
@@ -261,8 +280,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 
+    <!-- Add client data in JSON format for JavaScript -->
     <script>
+        // Client data to populate form fields
+        const clientData = <?php echo json_encode($uniqueClients); ?>;
+        
         document.addEventListener('DOMContentLoaded', function() {
+            // Client selection dropdown functionality
+            const clientSelect = document.getElementById('client_select');
+            const clearClientBtn = document.getElementById('clear_client');
+            
+            // Function to clear client fields
+            function clearClientFields() {
+                document.getElementById('client_name').value = '';
+                document.getElementById('client_email').value = '';
+                document.getElementById('client_address').value = '';
+                if (clientSelect) {
+                    clientSelect.value = '';
+                }
+            }
+            
+            if (clientSelect) {
+                clientSelect.addEventListener('change', function() {
+                    const selectedIndex = this.value;
+                    
+                    if (selectedIndex !== '') {
+                        const client = clientData[selectedIndex];
+                        document.getElementById('client_name').value = client.name;
+                        document.getElementById('client_email').value = client.email;
+                        document.getElementById('client_address').value = client.address;
+                    } else {
+                        // Clear fields when "New Client" is chosen
+                        clearClientFields();
+                    }
+                });
+            }
+            
+            // Clear button functionality
+            if (clearClientBtn) {
+                clearClientBtn.addEventListener('click', function() {
+                    clearClientFields();
+                });
+            }
+            
             // Add item row
             document.getElementById('add-item').addEventListener('click', function() {
                 const tbody = document.querySelector('#items-table tbody');

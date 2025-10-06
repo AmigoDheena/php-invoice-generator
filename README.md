@@ -16,11 +16,13 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Option to include or exclude tax (18%)
 - Manage multiple company profiles ("Invoice From")
 - Add and display company banking details on invoices and PDFs
+- Client data reuse for quick invoice creation with returning clients
 - All data stored in JSON files (no SQL or DB setup needed)
 - Export invoices as PDF (using dompdf)
 - Responsive UI with Tailwind CSS
 - Edit invoices at any time
 - List and manage all invoices from the dashboard
+- Pagination for better performance with many invoices
 - Currency displayed as `Rs.` throughout the app and PDF (for Indian Rupees)
 - No database required—just PHP and file permissions
 
@@ -52,20 +54,30 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 ## Usage
 
 - **Create Invoice:** Click "Create New Invoice", fill in details, add items, and save.
+- **Reuse Client Data:** Select existing clients from the dropdown to quickly fill client details.
 - **Edit Invoice:** Click the edit icon next to any invoice in the dashboard.
 - **Export PDF:** Click the PDF icon to download a PDF version of any invoice.
 - **Manage Companies:** Add or edit your own company profiles under "Manage Companies". You can now add banking details for payment info.
+- **Navigate Pages:** Use pagination controls to browse through invoices when you have many.
 - **No Database:** All data is stored in `/data` as JSON files. You can back up or move your data easily.
 
-## Pagination
+## Advanced Features
 
+### Pagination
 - The dashboard (`index.php`) now supports pagination for the invoices list. By default the dashboard shows **10 invoices per page** to keep the list fast and easy to navigate.
 - Use the `page` query parameter to navigate pages.
 - The pagination control shows previous/next, first/last buttons and a range of page numbers (up to 5 visible at once). The current page is highlighted.
 - If you want to change the number of invoices per page, edit the `$perPage` variable in `index.php` (search for `$perPage = 10;`). You can also update the `getInvoices()` call signature in `includes/functions.php` if you need more advanced control.
 
+### Client Data Reuse
+- When creating or editing invoices, you can now select from previously used clients to quickly fill in client details.
+- The system automatically extracts unique clients from your existing invoices based on email address.
+- Select a client from the dropdown at the top of the client information section to auto-populate the client name, email, and address.
+- You can still manually enter client details for new clients or to modify existing information.
+
 Notes:
 - Pagination is implemented server-side by slicing the JSON invoice array. For very large datasets you may want to switch to a database-backed approach for better performance.
+- Client data reuse is based on unique email addresses across all invoices.
 
 
 ## File Structure
