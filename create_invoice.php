@@ -87,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100">
+    <?php include_once 'includes/header.php'; ?>
     <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent">
         <header class="mb-6">
             <h1 class="text-3xl font-bold text-gray-800"><?php echo $pageTitle; ?></h1>
@@ -273,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="index.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded mr-2">
                     Cancel
                 </a>
-                <button type="submit" id="submit-button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                <button type="submit" id="submit-button" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--primary-color); hover:background-color: var(--primary-dark);">
                     Create Invoice
                 </button>
             </div>

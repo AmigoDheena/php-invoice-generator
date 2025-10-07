@@ -1,5 +1,14 @@
 /* Custom styles for invoice generator */
 
+:root {
+    --primary-color: #32c8a0;
+    --primary-color-dark: #2aa283;
+    --primary-color-light: #a7e9d7;
+    --secondary-color: #0d3155;
+    --secondary-color-light: #1a4980;
+    --secondary-color-dark: #072544;
+}
+
 /* Printable invoice styles */
 @media print {
     body {
@@ -63,6 +72,6 @@
 /* Form focus styles */
 input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(50, 200, 160, 0.2);
 }

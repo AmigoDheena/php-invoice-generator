@@ -29,18 +29,11 @@ $companies = getCompanies();
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100">
+    <?php include_once 'includes/header.php'; ?>
     <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent">
-        <header class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Invoice Generator</h1>
-            <p class="text-gray-600">Create and manage your invoices easily</p>
-        </header>
-
-        <div class="flex justify-between mb-6">
-            <a href="create_invoice.php" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+        <div class="mb-6 text-right">
+            <a href="create_invoice.php" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--primary-color); hover:background-color: var(--primary-dark);">
                 <i class="fas fa-plus mr-2"></i>Create New Invoice
-            </a>
-            <a href="manage_companies.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded">
-                <i class="fas fa-building mr-2"></i>Manage Companies
             </a>
         </div>
 
@@ -49,7 +42,7 @@ $companies = getCompanies();
             <!-- Tab Navigation -->
             <div class="border-b">
                 <div class="flex">
-                    <button class="tab-button py-3 px-6 border-b-2 border-blue-500 font-medium text-blue-600 bg-white" data-tab="invoices">
+                    <button class="tab-button py-3 px-6 border-b-2 border-primary font-medium text-primary bg-white" data-tab="invoices" style="border-color: var(--primary-color); color: var(--primary-color);">
                         <i class="fas fa-file-invoice mr-2"></i>Invoices
                     </button>
                     <button class="tab-button py-3 px-6 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 bg-white" data-tab="dashboard">
@@ -239,7 +232,8 @@ $companies = getCompanies();
                             for ($i = $startPage; $i <= $endPage; $i++): 
                             ?>
                                 <a href="?page=<?php echo $i; ?>" 
-                                   class="px-3 py-1 rounded border <?php echo $i == $page ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-50'; ?>">
+                                   class="px-3 py-1 rounded border <?php echo $i == $page ? 'text-white' : 'bg-white hover:bg-gray-50'; ?>" 
+                                   style="<?php echo $i == $page ? 'background-color: var(--primary-color);' : ''; ?>">
                                     <?php echo $i; ?>
                                 </a>
                             <?php endfor; ?>
@@ -278,16 +272,20 @@ $companies = getCompanies();
             
             // Remove active class from all buttons
             tabButtons.forEach(button => {
-                button.classList.remove('border-blue-500', 'text-blue-600');
+                button.classList.remove('text-gray-500');
                 button.classList.add('border-transparent', 'text-gray-500');
+                button.style.borderColor = '';
+                button.style.color = '';
             });
             
             // Show the selected tab content
             document.getElementById(tabId + '-tab').style.display = 'block';
             
             // Add active class to the clicked button
-            document.querySelector(`[data-tab="${tabId}"]`).classList.remove('border-transparent', 'text-gray-500');
-            document.querySelector(`[data-tab="${tabId}"]`).classList.add('border-blue-500', 'text-blue-600');
+            const activeTab = document.querySelector(`[data-tab="${tabId}"]`);
+            activeTab.classList.remove('border-transparent', 'text-gray-500');
+            activeTab.style.borderColor = 'var(--primary-color)';
+            activeTab.style.color = 'var(--primary-color)';
             
             // If switching to dashboard, ensure charts are properly rendered
             if(tabId === 'dashboard') {
@@ -318,6 +316,8 @@ $companies = getCompanies();
 
         // Chart color schemes
         const chartColors = {
+            primary: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#32c8a0',
+            secondary: getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim() || '#0d3155',
             blue: '#3B82F6',
             green: '#10B981',
             yellow: '#F59E0B',
@@ -352,7 +352,7 @@ $companies = getCompanies();
                             $data = array_column(getMonthlyRevenueSummary(), 'paid');
                             echo json_encode(array_values($data)); 
                         ?>,
-                        backgroundColor: chartColors.green
+                        backgroundColor: chartColors.primary
                     },
                     {
                         label: 'Unpaid',
@@ -595,8 +595,8 @@ $companies = getCompanies();
         background-color: #f9fafb;
     }
     .tab-button.active {
-        border-bottom-color: #3B82F6;
-        color: #2563EB;
+        border-bottom-color: var(--primary-color);
+        color: var(--primary-color);
     }
     .tab-content {
         display: none;

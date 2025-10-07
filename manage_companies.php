@@ -1,6 +1,9 @@
 <?php
 // Check if functions are already loaded via composer autoloader
-if (!function_exists('getInvoiceById')) {
+if (!function_exists('get        <div class="flex justify-between mb-4">
+            <a href="index.php" class="inline-block" style="color: var(--primary-color);">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+            </a>iceById')) {
     require_once 'includes/functions.php';
 }
 $pageTitle = 'Manage Companies';
@@ -89,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100">
+    <?php include_once 'includes/header.php'; ?>
     <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent">
         <header class="mb-6">
             <h1 class="text-3xl font-bold text-gray-800"><?php echo $pageTitle; ?></h1>
@@ -236,12 +240,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <a href="manage_companies.php" class="text-blue-500 hover:text-blue-700">
                                     Cancel
                                 </a>
-                                <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded">
+                                <button type="submit" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--secondary-color); hover:background-color: var(--secondary-dark);">
                                     Update Company
                                 </button>
                             <?php else: ?>
                                 <div></div>
-                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                                <button type="submit" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--primary-color); hover:background-color: var(--primary-dark);">
                                     Add Company
                                 </button>
                             <?php endif; ?>

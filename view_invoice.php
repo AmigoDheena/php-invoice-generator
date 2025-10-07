@@ -34,6 +34,7 @@ $pageTitle = $documentType . ' ' . $invoice['id'];
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="bg-gray-100">
+    <?php include_once 'includes/header.php'; ?>
     <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent" id="invoice-content">
         <div class="flex justify-between items-center mb-6">
             <div>
@@ -56,7 +57,7 @@ $pageTitle = $documentType . ' ' . $invoice['id'];
                 <a href="download_pdf.php?id=<?php echo $invoiceId; ?>" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">
                     <i class="fas fa-file-pdf mr-2"></i>PDF
                 </a>
-                <button onclick="window.print()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded print-invoice">
+                <button onclick="window.print()" class="text-white font-semibold py-2 px-4 rounded print-invoice" style="background-color: var(--primary-color); hover:background-color: var(--primary-dark);">
                     <i class="fas fa-print mr-2"></i>Print
                 </button>
             </div>

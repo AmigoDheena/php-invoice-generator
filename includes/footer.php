@@ -16,17 +16,17 @@
 .footer {
     margin-top: 3rem;
     padding: 1.5rem 0;
-    border-top: 1px solid #e5e7eb;
+    border-top: 2px solid #e7e7e7ff;
     text-align: center;
     color: #6b7280;
 }
 .footer a {
-    color: #3b82f6;
+    color: var(--primary-color);
     text-decoration: none;
     transition: color 0.2s;
 }
 .footer a:hover {
-    color: #2563eb;
+    color: var(--primary-dark);
     text-decoration: underline;
 }
 </style>
