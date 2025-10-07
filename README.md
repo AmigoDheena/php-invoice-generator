@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/img/logo.png" alt="PHP Invoice Generator Logo" width="280">
+</p>
 
 # PHP Invoice Generator (No Database)
 
