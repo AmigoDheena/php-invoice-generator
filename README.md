@@ -18,6 +18,7 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Add multiple items per invoice (description, quantity, price)
 - Option to include or exclude tax (18%)
 - Manage multiple company profiles ("Invoice From")
+- Product & Service Catalog with autocomplete selection when creating invoices
 - Add and display company banking details on invoices and PDFs
 - Client data reuse for quick invoice creation with returning clients
 - All data stored in JSON files (no SQL or DB setup needed)
@@ -58,6 +59,8 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 
 - **Create Invoice:** Click "Create New Invoice", fill in details, add items, and save.
 - **Reuse Client Data:** Select existing clients from the dropdown to quickly fill client details.
+- **Manage Products:** Click "Products" in the navigation to add, edit, and organize your product catalog.
+- **Select Products:** When creating invoices, search for products using the autocomplete field to quickly add them.
 - **Edit Invoice:** Click the edit icon next to any invoice in the dashboard.
 - **Export PDF:** Click the PDF icon to download a PDF version of any invoice.
 - **Manage Companies:** Add or edit your own company profiles under "Manage Companies". You can now add banking details for payment info.
@@ -78,9 +81,18 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Select a client from the dropdown at the top of the client information section to auto-populate the client name, email, and address.
 - You can still manually enter client details for new clients or to modify existing information.
 
+### Product & Service Catalog
+- Maintain a catalog of products and services that you frequently include in invoices
+- Organize products by categories to find them easily
+- Set default prices for each product to ensure consistent pricing
+- When creating or editing invoices, use the autocomplete search to quickly find and add products
+- Product details (description and price) are auto-filled when selected
+- Add SKUs/product codes for better inventory tracking
+
 Notes:
 - Pagination is implemented server-side by slicing the JSON invoice array. For very large datasets you may want to switch to a database-backed approach for better performance.
 - Client data reuse is based on unique email addresses across all invoices.
+- Product catalog supports unlimited number of products and categories.
 
 
 ## File Structure
@@ -91,11 +103,13 @@ Notes:
 - `/view_invoice.php` — View invoice details
 - `/download_pdf.php` — Export invoice as PDF (with banking details and Rs. currency)
 - `/manage_companies.php` — Manage company profiles and banking details
+- `/manage_products.php` — Manage products/services catalog
 - `/delete_invoice.php` — Delete invoice
 - `/includes/functions.php` — Core PHP logic
-- `/data/` — JSON data storage (invoices, companies)
+- `/data/` — JSON data storage (invoices, companies, products)
 - `/vendor/` — Composer dependencies (dompdf, etc.)
 - `/assets/` — CSS, JS, and static files
+- `/ajax/` — AJAX endpoints for dynamic data loading
 
 ## Development
 

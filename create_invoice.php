@@ -51,14 +51,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descriptions = $_POST['description'];
     $quantities = $_POST['quantity'];
     $prices = $_POST['price'];
+    $productIds = isset($_POST['product_id']) ? $_POST['product_id'] : [];
     
     for ($i = 0; $i < count($descriptions); $i++) {
         if (!empty($descriptions[$i])) {
-            $invoice['items'][] = [
+            $item = [
                 'description' => $descriptions[$i],
                 'quantity' => (float) $quantities[$i],
                 'price' => (float) $prices[$i]
             ];
+            
+            // Add product ID if provided
+            if (isset($productIds[$i]) && !empty($productIds[$i])) {
+                $item['product_id'] = $productIds[$i];
+            }
+            
+            $invoice['items'][] = $item;
         }
     }
     
@@ -205,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <table class="w-full border-collapse" id="items-table">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="border p-2 text-left">Description</th>
+                            <th class="border p-2 text-left">Product/Description</th>
                             <th class="border p-2 text-left">Quantity</th>
                             <th class="border p-2 text-left">Price</th>
                             <th class="border p-2 text-left">Total</th>
@@ -216,16 +224,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php foreach ($invoice['items'] as $index => $item): ?>
                             <tr class="item-row">
                                 <td class="border p-2">
+                                    <input type="hidden" name="product_id[]" value="<?php echo $item['product_id'] ?? ''; ?>">
                                     <input type="text" name="description[]" value="<?php echo $item['description']; ?>" 
-                                           class="w-full border-gray-300 rounded p-2 border focus:border-blue-500" required>
+                                           class="w-full border-gray-300 rounded p-2 border focus:border-primary-color product-search" 
+                                           placeholder="Search products or enter description..." required>
                                 </td>
                                 <td class="border p-2">
                                     <input type="number" name="quantity[]" value="<?php echo $item['quantity']; ?>" min="1" step="1" 
-                                           class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 item-quantity" required>
+                                           class="w-full border-gray-300 rounded p-2 border focus:border-primary-color item-quantity" required>
                                 </td>
                                 <td class="border p-2">
                                     <input type="number" name="price[]" value="<?php echo $item['price']; ?>" min="0" step="0.01" 
-                                           class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 item-price" required>
+                                           class="w-full border-gray-300 rounded p-2 border focus:border-primary-color item-price" required>
                                 </td>
                                 <td class="border p-2">
                                     <span class="item-total">Rs.0.00</span>
@@ -331,15 +341,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 newRow.className = 'item-row';
                 newRow.innerHTML = `
                     <td class="border p-2">
-                        <input type="text" name="description[]" class="w-full border-gray-300 rounded p-2 border focus:border-blue-500" required>
+                        <input type="hidden" name="product_id[]" value="">
+                        <input type="text" name="description[]" class="w-full border-gray-300 rounded p-2 border focus:border-primary-color product-search" 
+                               placeholder="Search products or enter description..." required>
                     </td>
                     <td class="border p-2">
                         <input type="number" name="quantity[]" value="1" min="1" step="1" 
-                               class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 item-quantity" required>
+                               class="w-full border-gray-300 rounded p-2 border focus:border-primary-color item-quantity" required>
                     </td>
                     <td class="border p-2">
                         <input type="number" name="price[]" value="0" min="0" step="0.01" 
-                               class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 item-price" required>
+                               class="w-full border-gray-300 rounded p-2 border focus:border-primary-color item-price" required>
                     </td>
                     <td class="border p-2">
                         <span class="item-total">Rs.0.00</span>
@@ -437,6 +449,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             calculateTotals();
         });
     </script>
+    
+    <script src="assets/js/product-selection.js"></script>
     
     <?php include_once 'includes/footer.php'; ?>
 </body>

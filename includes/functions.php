@@ -9,6 +9,9 @@ if (!defined('INVOICES_FILE')) {
 if (!defined('COMPANIES_FILE')) {
     define('COMPANIES_FILE', DATA_DIR . 'companies.json');
 }
+if (!defined('PRODUCTS_FILE')) {
+    define('PRODUCTS_FILE', DATA_DIR . 'products.json');
+}
 
 // Initialize JSON files if they don't exist
 if (!function_exists('initializeDataFiles')) {
@@ -40,6 +43,15 @@ function initializeDataFiles() {
     $logosDir = __DIR__ . '/../uploads/logos';
     if (!file_exists($logosDir)) {
         mkdir($logosDir, 0755, true);
+    }
+    
+    // Initialize products catalog file if it doesn't exist
+    if (!file_exists(PRODUCTS_FILE)) {
+        $initialProducts = [
+            "products" => [],
+            "last_id" => 0
+        ];
+        file_put_contents(PRODUCTS_FILE, json_encode($initialProducts, JSON_PRETTY_PRINT));
     }
 }
 
@@ -396,6 +408,122 @@ function getTopClientsByValue($limit = 5) {
     
     // Take top X clients
     return array_slice($clients, 0, $limit, true);
+}
+}
+
+// Product Management Functions
+
+// Get all products
+if (!function_exists('getProducts')) {
+function getProducts($categoryFilter = null) {
+    initializeDataFiles();
+    $data = file_get_contents(PRODUCTS_FILE);
+    $productsData = json_decode($data, true) ?: ['products' => [], 'last_id' => 0];
+    $products = $productsData['products'];
+    
+    // If category filter is provided, filter products
+    if ($categoryFilter) {
+        $products = array_filter($products, function($product) use ($categoryFilter) {
+            return $product['category'] === $categoryFilter;
+        });
+    }
+    
+    // Sort products by name
+    usort($products, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
+    });
+    
+    return $products;
+}
+}
+
+// Get product by ID
+if (!function_exists('getProductById')) {
+function getProductById($id) {
+    $products = getProducts();
+    foreach ($products as $product) {
+        if ($product['id'] == $id) {
+            return $product;
+        }
+    }
+    return null;
+}
+}
+
+// Save product (create or update)
+if (!function_exists('saveProduct')) {
+function saveProduct($product) {
+    initializeDataFiles();
+    $data = file_get_contents(PRODUCTS_FILE);
+    $productsData = json_decode($data, true) ?: ['products' => [], 'last_id' => 0];
+    $products = $productsData['products'];
+    $lastId = $productsData['last_id'];
+    
+    // If no ID provided or ID is 0, create a new product
+    if (empty($product['id'])) {
+        $lastId++;
+        $product['id'] = $lastId;
+        $products[] = $product;
+    } else {
+        // Update existing product
+        $updated = false;
+        foreach ($products as $key => $existingProduct) {
+            if ($existingProduct['id'] == $product['id']) {
+                $products[$key] = $product;
+                $updated = true;
+                break;
+            }
+        }
+        
+        // If not found, add as new
+        if (!$updated) {
+            $products[] = $product;
+        }
+    }
+    
+    // Update and save file
+    $productsData['products'] = $products;
+    $productsData['last_id'] = $lastId;
+    file_put_contents(PRODUCTS_FILE, json_encode($productsData, JSON_PRETTY_PRINT));
+    
+    return $product['id'];
+}
+}
+
+// Delete a product by ID
+if (!function_exists('deleteProduct')) {
+function deleteProduct($id) {
+    initializeDataFiles();
+    $data = file_get_contents(PRODUCTS_FILE);
+    $productsData = json_decode($data, true) ?: ['products' => [], 'last_id' => 0];
+    $products = $productsData['products'];
+    
+    foreach ($products as $key => $product) {
+        if ($product['id'] == $id) {
+            unset($products[$key]);
+            $productsData['products'] = array_values($products);
+            file_put_contents(PRODUCTS_FILE, json_encode($productsData, JSON_PRETTY_PRINT));
+            return true;
+        }
+    }
+    return false;
+}
+}
+
+// Get all unique product categories
+if (!function_exists('getProductCategories')) {
+function getProductCategories() {
+    $products = getProducts();
+    $categories = [];
+    
+    foreach ($products as $product) {
+        if (!empty($product['category']) && !in_array($product['category'], $categories)) {
+            $categories[] = $product['category'];
+        }
+    }
+    
+    sort($categories);
+    return $categories;
 }
 }
 
