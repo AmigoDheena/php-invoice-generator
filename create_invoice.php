@@ -209,6 +209,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <h2 class="text-xl font-semibold mb-4">Invoice Items</h2>
             
+            <!-- Quick product selection dropdown -->
+            <div class="mb-4 bg-gray-50 p-3 rounded-md border">
+                <label for="product-quick-select" class="block text-gray-700 font-medium mb-2">
+                    <i class="fas fa-box-open mr-1"></i> Add from Product Catalog
+                </label>
+                <div class="flex gap-2">
+                    <select id="product-quick-select" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color">
+                        <option value="">-- Select a product --</option>
+                        <!-- Products will be loaded via JavaScript -->
+                    </select>
+                    <button type="button" id="add-selected-product" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--primary-color);">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+            
             <div class="overflow-x-auto mb-4">
                 <table class="w-full border-collapse" id="items-table">
                     <thead>
@@ -297,6 +313,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const clientData = <?php echo json_encode($uniqueClients); ?>;
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Load products for quick selection dropdown
+            loadProductsForQuickSelect();
+            
             // Client selection dropdown functionality
             const clientSelect = document.getElementById('client_select');
             const clearClientBtn = document.getElementById('clear_client');
@@ -447,6 +466,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Initial calculation
             calculateTotals();
+            
+            // Quick product selection functionality
+            const productQuickSelect = document.getElementById('product-quick-select');
+            const addSelectedProductBtn = document.getElementById('add-selected-product');
+            
+            if (addSelectedProductBtn) {
+                addSelectedProductBtn.addEventListener('click', function() {
+                    const selectedProductId = productQuickSelect.value;
+                    
+                    if (selectedProductId) {
+                        addProductToInvoice(selectedProductId);
+                        productQuickSelect.value = ''; // Reset selection
+                    } else {
+                        alert('Please select a product first');
+                    }
+                });
+            }
+            
+            // Function to load products for the quick select dropdown
+            function loadProductsForQuickSelect() {
+                fetch('ajax/get_products.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && Array.isArray(data)) {
+                            const productQuickSelect = document.getElementById('product-quick-select');
+                            
+                            // Group products by category
+                            const productsByCategory = {};
+                            data.forEach(product => {
+                                if (!productsByCategory[product.category]) {
+                                    productsByCategory[product.category] = [];
+                                }
+                                productsByCategory[product.category].push(product);
+                            });
+                            
+                            // Create option groups for each category
+                            for (const category in productsByCategory) {
+                                const optgroup = document.createElement('optgroup');
+                                optgroup.label = category || 'Uncategorized';
+                                
+                                productsByCategory[category].forEach(product => {
+                                    const option = document.createElement('option');
+                                    option.value = product.id;
+                                    option.textContent = `${product.name} - Rs.${product.price}`;
+                                    option.dataset.price = product.price;
+                                    option.dataset.description = product.description;
+                                    optgroup.appendChild(option);
+                                });
+                                
+                                productQuickSelect.appendChild(optgroup);
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error loading products:', error));
+            }
+            
+            // Function to add selected product to invoice
+            function addProductToInvoice(productId) {
+                const selectedOption = productQuickSelect.querySelector(`option[value="${productId}"]`);
+                if (!selectedOption) return;
+                
+                const productName = selectedOption.textContent.split(' - ')[0];
+                const productPrice = parseFloat(selectedOption.dataset.price) || 0;
+                const productDescription = selectedOption.dataset.description || productName;
+                
+                // Trigger add item button to create a new row
+                document.getElementById('add-item').click();
+                
+                // Get the last added row
+                const rows = document.querySelectorAll('.item-row');
+                const lastRow = rows[rows.length - 1];
+                
+                // Set product details in the new row
+                const productIdInput = lastRow.querySelector('input[name="product_id[]"]');
+                const descriptionInput = lastRow.querySelector('input[name="description[]"]');
+                const priceInput = lastRow.querySelector('input[name="price[]"]');
+                
+                productIdInput.value = productId;
+                descriptionInput.value = productDescription;
+                priceInput.value = productPrice;
+                
+                // Recalculate totals
+                calculateTotals();
+            }
         });
     </script>
     
