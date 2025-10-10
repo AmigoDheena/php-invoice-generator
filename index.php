@@ -3,18 +3,66 @@
 if (!function_exists('getInvoiceById')) {
     require_once 'includes/functions.php';
 }
+
+// Function to build sort URLs while maintaining existing filters
+function buildSortUrl($column) {
+    global $sortBy, $sortOrder, $filters;
+    
+    $newSortOrder = ($sortBy === $column && $sortOrder === 'asc') ? 'desc' : 'asc';
+    $params = $_GET;
+    $params['sort_by'] = $column;
+    $params['sort_order'] = $newSortOrder;
+    
+    return '?' . http_build_query($params);
+}
 $pageTitle = 'Invoice Generator';
+
+// Process filter parameters
+$filters = [];
+$validFilters = ['client', 'status', 'document_type', 'min_amount', 'max_amount', 'start_date', 'end_date', 'invoice_id'];
+
+// Check if a saved filter is being loaded
+if (isset($_GET['load_filter'])) {
+    $savedFilters = getSavedFilters();
+    foreach ($savedFilters as $savedFilter) {
+        if ($savedFilter['id'] == $_GET['load_filter']) {
+            // Set filter values from saved filter
+            if (!empty($savedFilter['filters'])) {
+                $filters = $savedFilter['filters'];
+            }
+            
+            // Set sorting from saved filter
+            $sortBy = $savedFilter['sort_by'] ?? 'date';
+            $sortOrder = $savedFilter['sort_order'] ?? 'desc';
+            break;
+        }
+    }
+} else {
+    // Get filter values from request
+    foreach ($validFilters as $key) {
+        if (isset($_GET[$key]) && $_GET[$key] !== '') {
+            $filters[$key] = $_GET[$key];
+        }
+    }
+    
+    // Get sort parameters
+    $sortBy = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'date';
+    $sortOrder = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'desc';
+}
 
 // Pagination setup
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $perPage = 10;
 
-// Get invoices in descending order with pagination
-$result = getInvoices(true, $page, $perPage);
+// Get invoices with filters, sorting and pagination
+$result = getInvoices(true, $page, $perPage, $filters, $sortBy, $sortOrder);
 $invoices = $result['data'];
 $totalInvoices = $result['total'];
 $lastPage = $result['lastPage'];
+
+// Get all unique clients for filter dropdown
+$uniqueClients = getUniqueClients();
 
 $companies = getCompanies();
 ?>
@@ -31,10 +79,219 @@ $companies = getCompanies();
 <body class="bg-gray-100">
     <?php include_once 'includes/header.php'; ?>
     <div class="max-w-6xl mx-auto px-6 py-10 bg-transparent">
-        <div class="mb-6 text-right">
-            <a href="create_invoice.php" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--primary-color); hover:background-color: var(--primary-dark);">
-                <i class="fas fa-plus mr-2"></i>Create New Invoice
-            </a>
+        <div class="mb-6 flex flex-wrap justify-between items-center">
+            <div class="mb-2 md:mb-0">
+                <button id="toggle-filter-form" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-filter mr-2"></i> Search & Filter
+                </button>
+                <a href="saved_filters.php" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ml-2">
+                    <i class="fas fa-bookmark mr-2"></i> Saved Filters
+                </a>
+                <?php if (!empty($filters)): ?>
+                <a href="index.php" class="inline-flex items-center px-4 py-2 ml-2 text-sm font-medium text-red-700">
+                    <i class="fas fa-times mr-1"></i> Clear Filters
+                </a>
+                <?php endif; ?>
+            </div>
+            <div>
+                <a href="create_invoice.php" class="text-white font-semibold py-2 px-4 rounded" style="background-color: var(--primary-color); hover:background-color: var(--primary-dark);">
+                    <i class="fas fa-plus mr-2"></i>Create New Invoice
+                </a>
+            </div>
+        </div>
+        
+        <!-- Advanced Filter Form -->
+        <div id="filter-form" class="bg-white shadow rounded-lg mb-6 <?php echo empty($filters) ? 'hidden' : ''; ?>">
+            <div class="p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fas fa-search mr-2"></i> Search & Filter Invoices
+                </h2>
+                
+                <form action="index.php" method="get" id="invoice-filter-form">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Client Filter -->
+                        <div class="mb-4">
+                            <label for="client" class="block text-sm font-medium text-gray-700 mb-1">Client Name/Email</label>
+                            <input type="text" name="client" id="client" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color" value="<?php echo htmlspecialchars($filters['client'] ?? ''); ?>">
+                        </div>
+                        
+                        <!-- Invoice ID Filter -->
+                        <div class="mb-4">
+                            <label for="invoice_id" class="block text-sm font-medium text-gray-700 mb-1">Invoice #</label>
+                            <input type="text" name="invoice_id" id="invoice_id" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color" value="<?php echo htmlspecialchars($filters['invoice_id'] ?? ''); ?>">
+                        </div>
+                        
+                        <!-- Status Filter -->
+                        <div class="mb-4">
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select name="status" id="status" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color">
+                                <option value="">All</option>
+                                <option value="Paid" <?php echo (isset($filters['status']) && $filters['status'] === 'Paid') ? 'selected' : ''; ?>>Paid</option>
+                                <option value="Unpaid" <?php echo (isset($filters['status']) && $filters['status'] === 'Unpaid') ? 'selected' : ''; ?>>Unpaid</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Document Type Filter -->
+                        <div class="mb-4">
+                            <label for="document_type" class="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
+                            <select name="document_type" id="document_type" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color">
+                                <option value="">All</option>
+                                <option value="Invoice" <?php echo (isset($filters['document_type']) && $filters['document_type'] === 'Invoice') ? 'selected' : ''; ?>>Invoice</option>
+                                <option value="Quotation" <?php echo (isset($filters['document_type']) && $filters['document_type'] === 'Quotation') ? 'selected' : ''; ?>>Quotation</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Min Amount Filter -->
+                        <div class="mb-4">
+                            <label for="min_amount" class="block text-sm font-medium text-gray-700 mb-1">Min Amount (Rs.)</label>
+                            <input type="number" name="min_amount" id="min_amount" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color" min="0" step="0.01" value="<?php echo htmlspecialchars($filters['min_amount'] ?? ''); ?>">
+                        </div>
+                        
+                        <!-- Max Amount Filter -->
+                        <div class="mb-4">
+                            <label for="max_amount" class="block text-sm font-medium text-gray-700 mb-1">Max Amount (Rs.)</label>
+                            <input type="number" name="max_amount" id="max_amount" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color" min="0" step="0.01" value="<?php echo htmlspecialchars($filters['max_amount'] ?? ''); ?>">
+                        </div>
+                        
+                        <!-- Start Date Filter -->
+                        <div class="mb-4">
+                            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <input type="date" name="start_date" id="start_date" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color" value="<?php echo htmlspecialchars($filters['start_date'] ?? ''); ?>">
+                        </div>
+                        
+                        <!-- End Date Filter -->
+                        <div class="mb-4">
+                            <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                            <input type="date" name="end_date" id="end_date" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color" value="<?php echo htmlspecialchars($filters['end_date'] ?? ''); ?>">
+                        </div>
+                        
+                        <!-- Sort By Filter -->
+                        <div class="mb-4">
+                            <label for="sort_by" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                            <select name="sort_by" id="sort_by" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color">
+                                <option value="date" <?php echo ($sortBy === 'date') ? 'selected' : ''; ?>>Date</option>
+                                <option value="due_date" <?php echo ($sortBy === 'due_date') ? 'selected' : ''; ?>>Due Date</option>
+                                <option value="id" <?php echo ($sortBy === 'id') ? 'selected' : ''; ?>>Invoice Number</option>
+                                <option value="client_name" <?php echo ($sortBy === 'client_name') ? 'selected' : ''; ?>>Client Name</option>
+                                <option value="total" <?php echo ($sortBy === 'total') ? 'selected' : ''; ?>>Amount</option>
+                                <option value="status" <?php echo ($sortBy === 'status') ? 'selected' : ''; ?>>Status</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Sort Order Filter -->
+                        <div class="mb-4">
+                            <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                            <select name="sort_order" id="sort_order" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-primary-color">
+                                <option value="desc" <?php echo ($sortOrder === 'desc') ? 'selected' : ''; ?>>Descending</option>
+                                <option value="asc" <?php echo ($sortOrder === 'asc') ? 'selected' : ''; ?>>Ascending</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <button type="submit" class="px-4 py-2 text-white font-semibold rounded" style="background-color: var(--primary-color);">
+                                <i class="fas fa-search mr-2"></i>Apply Filters
+                            </button>
+                            <a href="index.php" class="px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded ml-2">
+                                <i class="fas fa-times mr-2"></i>Reset
+                            </a>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <!-- Save Filter Button (Opens Modal) -->
+                            <button type="button" id="save-filter-btn" class="px-4 py-2 bg-gray-700 text-white font-medium rounded mr-2">
+                                <i class="fas fa-save mr-2"></i>Save Filter
+                            </button>
+                            
+                            <!-- Export CSV Button -->
+                            <button type="button" id="export-csv-btn" class="px-4 py-2 bg-green-600 text-white font-medium rounded" onclick="exportToCSV();">
+                                <i class="fas fa-file-csv mr-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <?php if (!empty($filters)): ?>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="text-sm text-gray-500">Active filters:</span>
+                    <?php foreach ($filters as $key => $value): ?>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <?php 
+                            switch($key) {
+                                case 'client':
+                                    echo "Client: $value";
+                                    break;
+                                case 'status':
+                                    echo "Status: $value";
+                                    break;
+                                case 'document_type':
+                                    echo "Type: $value";
+                                    break;
+                                case 'min_amount':
+                                    echo "Min Amount: Rs.$value";
+                                    break;
+                                case 'max_amount':
+                                    echo "Max Amount: Rs.$value";
+                                    break;
+                                case 'start_date':
+                                    echo "From: $value";
+                                    break;
+                                case 'end_date':
+                                    echo "To: $value";
+                                    break;
+                                case 'invoice_id':
+                                    echo "Invoice ID: $value";
+                                    break;
+                            }
+                            ?>
+                        </span>
+                    <?php endforeach; ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Sort: <?php echo $sortBy; ?> (<?php echo $sortOrder; ?>)
+                    </span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- Save Filter Modal -->
+        <div id="save-filter-modal" class="fixed inset-0 z-10 overflow-y-auto hidden">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Save Filter</h3>
+                                <div class="mt-2">
+                                    <form id="save-filter-form" action="saved_filters.php" method="post">
+                                        <input type="hidden" name="action" value="save">
+                                        
+                                        <div class="mb-4">
+                                            <label for="filter_name" class="block text-sm font-medium text-gray-700">Filter Name</label>
+                                            <input type="text" name="filter_name" id="filter_name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:border-primary-color" placeholder="Enter a name for this filter" required>
+                                        </div>
+                                        
+                                        <!-- Hidden fields to store filter data -->
+                                        <div id="filter-data-container"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" id="confirm-save-filter" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-white font-medium sm:ml-3 sm:w-auto sm:text-sm" style="background-color: var(--primary-color);">
+                            Save Filter
+                        </button>
+                        <button type="button" id="cancel-save-filter" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tabbed Interface -->
@@ -141,13 +398,67 @@ $companies = getCompanies();
                     <table class="w-full border-collapse">
                         <thead>
                             <tr class="bg-gray-100">
-                                <th class="border p-2 text-left">Doc #</th>
-                                <th class="border p-2 text-left">Type</th>
-                                <th class="border p-2 text-left">Date</th>
-                                <th class="border p-2 text-left">Client</th>
+                                <th class="border p-2 text-left">
+                                    <a href="<?php echo buildSortUrl('id'); ?>" class="flex items-center">
+                                        Doc # 
+                                        <?php if ($sortBy === 'id'): ?>
+                                            <i class="fas fa-sort-<?php echo $sortOrder === 'asc' ? 'up' : 'down'; ?> ml-1 text-gray-500"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-sort ml-1 text-gray-300"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                </th>
+                                <th class="border p-2 text-left">
+                                    <a href="<?php echo buildSortUrl('document_type'); ?>" class="flex items-center">
+                                        Type 
+                                        <?php if ($sortBy === 'document_type'): ?>
+                                            <i class="fas fa-sort-<?php echo $sortOrder === 'asc' ? 'up' : 'down'; ?> ml-1 text-gray-500"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-sort ml-1 text-gray-300"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                </th>
+                                <th class="border p-2 text-left">
+                                    <a href="<?php echo buildSortUrl('date'); ?>" class="flex items-center">
+                                        Date 
+                                        <?php if ($sortBy === 'date'): ?>
+                                            <i class="fas fa-sort-<?php echo $sortOrder === 'asc' ? 'up' : 'down'; ?> ml-1 text-gray-500"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-sort ml-1 text-gray-300"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                </th>
+                                <th class="border p-2 text-left">
+                                    <a href="<?php echo buildSortUrl('client_name'); ?>" class="flex items-center">
+                                        Client 
+                                        <?php if ($sortBy === 'client_name'): ?>
+                                            <i class="fas fa-sort-<?php echo $sortOrder === 'asc' ? 'up' : 'down'; ?> ml-1 text-gray-500"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-sort ml-1 text-gray-300"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                </th>
                                 <th class="border p-2 text-left">Company</th>
-                                <th class="border p-2 text-left">Amount</th>
-                                <th class="border p-2 text-left">Status</th>
+                                <th class="border p-2 text-left">
+                                    <a href="<?php echo buildSortUrl('total'); ?>" class="flex items-center">
+                                        Amount 
+                                        <?php if ($sortBy === 'total'): ?>
+                                            <i class="fas fa-sort-<?php echo $sortOrder === 'asc' ? 'up' : 'down'; ?> ml-1 text-gray-500"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-sort ml-1 text-gray-300"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                </th>
+                                <th class="border p-2 text-left">
+                                    <a href="<?php echo buildSortUrl('status'); ?>" class="flex items-center">
+                                        Status 
+                                        <?php if ($sortBy === 'status'): ?>
+                                            <i class="fas fa-sort-<?php echo $sortOrder === 'asc' ? 'up' : 'down'; ?> ml-1 text-gray-500"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-sort ml-1 text-gray-300"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                </th>
                                 <th class="border p-2 text-left">Actions</th>
                             </tr>
                         </thead>
@@ -630,6 +941,109 @@ $companies = getCompanies();
     </style>
 
     <script src="assets/js/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle filter form visibility
+            const toggleFilterBtn = document.getElementById('toggle-filter-form');
+            const filterForm = document.getElementById('filter-form');
+            
+            if (toggleFilterBtn) {
+                toggleFilterBtn.addEventListener('click', function() {
+                    filterForm.classList.toggle('hidden');
+                });
+            }
+            
+            // Save filter functionality
+            const saveFilterBtn = document.getElementById('save-filter-btn');
+            const saveFilterModal = document.getElementById('save-filter-modal');
+            const cancelSaveFilterBtn = document.getElementById('cancel-save-filter');
+            const confirmSaveFilterBtn = document.getElementById('confirm-save-filter');
+            const saveFilterForm = document.getElementById('save-filter-form');
+            const filterDataContainer = document.getElementById('filter-data-container');
+            
+            if (saveFilterBtn) {
+                saveFilterBtn.addEventListener('click', function() {
+                    // Generate hidden fields for all filter values
+                    const filterForm = document.getElementById('invoice-filter-form');
+                    const formData = new FormData(filterForm);
+                    
+                    // Clear previous data
+                    filterDataContainer.innerHTML = '';
+                    
+                    // Add hidden fields for each filter value
+                    for (const [key, value] of formData.entries()) {
+                        if (value !== '') {
+                            const hiddenField = document.createElement('input');
+                            hiddenField.type = 'hidden';
+                            hiddenField.name = 'filters[' + key + ']';
+                            hiddenField.value = value;
+                            filterDataContainer.appendChild(hiddenField);
+                        }
+                    }
+                    
+                    // Add sort fields
+                    const sortBy = document.getElementById('sort_by').value;
+                    const sortOrder = document.getElementById('sort_order').value;
+                    
+                    const sortByField = document.createElement('input');
+                    sortByField.type = 'hidden';
+                    sortByField.name = 'sort_by';
+                    sortByField.value = sortBy;
+                    filterDataContainer.appendChild(sortByField);
+                    
+                    const sortOrderField = document.createElement('input');
+                    sortOrderField.type = 'hidden';
+                    sortOrderField.name = 'sort_order';
+                    sortOrderField.value = sortOrder;
+                    filterDataContainer.appendChild(sortOrderField);
+                    
+                    // Show the modal
+                    saveFilterModal.classList.remove('hidden');
+                });
+            }
+            
+            if (cancelSaveFilterBtn) {
+                cancelSaveFilterBtn.addEventListener('click', function() {
+                    saveFilterModal.classList.add('hidden');
+                });
+            }
+            
+            if (confirmSaveFilterBtn) {
+                confirmSaveFilterBtn.addEventListener('click', function() {
+                    saveFilterForm.submit();
+                });
+            }
+            
+            // Export to CSV functionality
+            window.exportToCSV = function() {
+                const filterForm = document.getElementById('invoice-filter-form');
+                const formData = new FormData(filterForm);
+                
+                // Create URL with current filter parameters
+                let params = new URLSearchParams();
+                for (const [key, value] of formData.entries()) {
+                    if (value !== '') {
+                        params.append(key, value);
+                    }
+                }
+                
+                // Redirect to export endpoint
+                window.location.href = 'export_csv.php?' + params.toString();
+            };
+            
+            // Handle pressing Enter in filter fields
+            const filterInputs = document.querySelectorAll('#invoice-filter-form input');
+            filterInputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('invoice-filter-form').submit();
+                    }
+                });
+            });
+        });
+    </script>
     
     <?php include_once 'includes/footer.php'; ?>
 </body>

@@ -19,6 +19,9 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Option to include or exclude tax (18%)
 - Manage multiple company profiles ("Invoice From")
 - Product & Service Catalog with autocomplete selection when creating invoices
+- Advanced Search & Filtering with custom saved filters
+- Column sorting for invoice management
+- Export filtered invoice lists to CSV
 - Add and display company banking details on invoices and PDFs
 - Client data reuse for quick invoice creation with returning clients
 - All data stored in JSON files (no SQL or DB setup needed)
@@ -63,6 +66,11 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - **Select Products:** When creating invoices, search for products using the autocomplete field to quickly add them.
 - **Edit Invoice:** Click the edit icon next to any invoice in the dashboard.
 - **Export PDF:** Click the PDF icon to download a PDF version of any invoice.
+- **Search & Filter:** Click "Search & Filter" to open the advanced search panel with multiple filtering options.
+- **Sort Invoices:** Click on column headers in the invoice list to sort by that column.
+- **Save Filters:** Apply filters and click "Save Filter" to save your filter combinations for future use.
+- **Export CSV:** Apply filters and click "Export CSV" to download filtered invoice data as a CSV file.
+- **Manage Saved Filters:** Click "Saved Filters" to view, apply, or delete your saved filter combinations.
 - **Manage Companies:** Add or edit your own company profiles under "Manage Companies". You can now add banking details for payment info.
 - **Navigate Pages:** Use pagination controls to browse through invoices when you have many.
 - **No Database:** All data is stored in `/data` as JSON files. You can back up or move your data easily.
@@ -89,10 +97,21 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Product details (description and price) are auto-filled when selected
 - Add SKUs/product codes for better inventory tracking
 
+### Advanced Search & Filtering
+- **Comprehensive Filters**: Filter invoices by client name/email, invoice number, status, document type, date range, and amount range
+- **Column Sorting**: Sort your invoice list by any column (date, client name, amount, status, etc.) in ascending or descending order
+- **Filter Combinations**: Apply multiple filters simultaneously for precise invoice searching
+- **Saved Filters**: Save your commonly used filter combinations with custom names for quick access
+- **Filter Management**: View, apply, and delete your saved filters from the dedicated Saved Filters page
+- **CSV Export**: Export filtered invoice lists to CSV format with all relevant invoice data
+- **Visual Indicators**: Active filters and sort options are clearly displayed with visual indicators
+- **Responsive Design**: All filtering options work seamlessly on mobile and desktop devices
+
 Notes:
 - Pagination is implemented server-side by slicing the JSON invoice array. For very large datasets you may want to switch to a database-backed approach for better performance.
 - Client data reuse is based on unique email addresses across all invoices.
 - Product catalog supports unlimited number of products and categories.
+- Saved filters are stored in the `data/saved_filters.json` file.
 
 
 ## File Structure
@@ -102,11 +121,13 @@ Notes:
 - `/edit_invoice.php` — Edit existing invoice
 - `/view_invoice.php` — View invoice details
 - `/download_pdf.php` — Export invoice as PDF (with banking details and Rs. currency)
+- `/export_csv.php` — Export invoice list to CSV based on filters
+- `/saved_filters.php` — Manage saved filter combinations
 - `/manage_companies.php` — Manage company profiles and banking details
 - `/manage_products.php` — Manage products/services catalog
 - `/delete_invoice.php` — Delete invoice
 - `/includes/functions.php` — Core PHP logic
-- `/data/` — JSON data storage (invoices, companies, products)
+- `/data/` — JSON data storage (invoices, companies, products, saved filters)
 - `/vendor/` — Composer dependencies (dompdf, etc.)
 - `/assets/` — CSS, JS, and static files
 - `/ajax/` — AJAX endpoints for dynamic data loading

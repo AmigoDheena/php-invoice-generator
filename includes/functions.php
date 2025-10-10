@@ -57,14 +57,101 @@ function initializeDataFiles() {
 
 }
 
-// Get all invoices with optional pagination
+// Get all invoices with optional filtering, sorting and pagination
 if (!function_exists('getInvoices')) {
-function getInvoices($orderDesc = false, $page = null, $perPage = 10) {
+function getInvoices($orderDesc = false, $page = null, $perPage = 10, $filters = [], $sortBy = null, $sortOrder = 'desc') {
     initializeDataFiles();
     $data = file_get_contents(INVOICES_FILE);
     $invoices = json_decode($data, true) ?: [];
     
-    if ($orderDesc) {
+    // Apply filters if provided
+    if (!empty($filters)) {
+        $invoices = array_filter($invoices, function($invoice) use ($filters) {
+            $match = true;
+            
+            // Filter by client name or email
+            if (!empty($filters['client'])) {
+                $clientSearch = strtolower($filters['client']);
+                $clientName = strtolower($invoice['client_name'] ?? '');
+                $clientEmail = strtolower($invoice['client_email'] ?? '');
+                
+                if (strpos($clientName, $clientSearch) === false && 
+                    strpos($clientEmail, $clientSearch) === false) {
+                    return false;
+                }
+            }
+            
+            // Filter by status
+            if (!empty($filters['status']) && $invoice['status'] !== $filters['status']) {
+                return false;
+            }
+            
+            // Filter by document type
+            if (!empty($filters['document_type']) && 
+                ($invoice['document_type'] ?? 'Invoice') !== $filters['document_type']) {
+                return false;
+            }
+            
+            // Filter by minimum amount
+            if (isset($filters['min_amount']) && $filters['min_amount'] !== '' && 
+                $invoice['total'] < (float)$filters['min_amount']) {
+                return false;
+            }
+            
+            // Filter by maximum amount
+            if (isset($filters['max_amount']) && $filters['max_amount'] !== '' && 
+                $invoice['total'] > (float)$filters['max_amount']) {
+                return false;
+            }
+            
+            // Filter by start date
+            if (!empty($filters['start_date']) && 
+                strtotime($invoice['date']) < strtotime($filters['start_date'])) {
+                return false;
+            }
+            
+            // Filter by end date
+            if (!empty($filters['end_date']) && 
+                strtotime($invoice['date']) > strtotime($filters['end_date'])) {
+                return false;
+            }
+            
+            // Filter by invoice ID
+            if (!empty($filters['invoice_id'])) {
+                $idSearch = strtolower($filters['invoice_id']);
+                $invoiceId = strtolower($invoice['id']);
+                
+                if (strpos($invoiceId, $idSearch) === false) {
+                    return false;
+                }
+            }
+            
+            return $match;
+        });
+    }
+    
+    // Sort invoices
+    if ($sortBy) {
+        usort($invoices, function($a, $b) use ($sortBy, $sortOrder) {
+            $valA = isset($a[$sortBy]) ? $a[$sortBy] : '';
+            $valB = isset($b[$sortBy]) ? $b[$sortBy] : '';
+            
+            // Special case for date sorting
+            if ($sortBy == 'date' || $sortBy == 'due_date') {
+                $valA = strtotime($valA);
+                $valB = strtotime($valB);
+            }
+            
+            // For numeric values
+            if (is_numeric($valA) && is_numeric($valB)) {
+                $comparison = $valA <=> $valB;
+            } else {
+                $comparison = strcasecmp($valA, $valB);
+            }
+            
+            return $sortOrder === 'asc' ? $comparison : -$comparison;
+        });
+    } elseif ($orderDesc) {
         // Sort invoices in descending order by ID (newest first)
         usort($invoices, function($a, $b) {
             return strcmp($b['id'], $a['id']);
@@ -75,14 +162,15 @@ function getInvoices($orderDesc = false, $page = null, $perPage = 10) {
     if ($page !== null) {
         $totalItems = count($invoices);
         $offset = ($page - 1) * $perPage;
-        $invoices = array_slice($invoices, $offset, $perPage);
+        $paginatedInvoices = array_slice($invoices, $offset, $perPage);
         
         return [
-            'data' => $invoices,
+            'data' => $paginatedInvoices,
             'total' => $totalItems,
             'perPage' => $perPage,
             'currentPage' => $page,
-            'lastPage' => ceil($totalItems / $perPage)
+            'lastPage' => ceil($totalItems / $perPage),
+            'allData' => $invoices // Include all filtered data (for export)
         ];
     }
     
@@ -524,6 +612,129 @@ function getProductCategories() {
     
     sort($categories);
     return $categories;
+}
+}
+
+// Get all saved filters
+if (!function_exists('getSavedFilters')) {
+function getSavedFilters() {
+    $filtersFile = DATA_DIR . 'saved_filters.json';
+    
+    if (!file_exists($filtersFile)) {
+        file_put_contents($filtersFile, json_encode([]));
+        return [];
+    }
+    
+    $data = file_get_contents($filtersFile);
+    return json_decode($data, true) ?: [];
+}
+}
+
+// Save a filter preset
+if (!function_exists('saveFilter')) {
+function saveFilter($filterData) {
+    $filtersFile = DATA_DIR . 'saved_filters.json';
+    $filters = getSavedFilters();
+    
+    // Generate ID if not provided
+    if (empty($filterData['id'])) {
+        $maxId = 0;
+        foreach ($filters as $filter) {
+            if ($filter['id'] > $maxId) {
+                $maxId = $filter['id'];
+            }
+        }
+        $filterData['id'] = $maxId + 1;
+        $filters[] = $filterData;
+    } else {
+        // Update existing filter
+        $updated = false;
+        foreach ($filters as $key => $filter) {
+            if ($filter['id'] == $filterData['id']) {
+                $filters[$key] = $filterData;
+                $updated = true;
+                break;
+            }
+        }
+        
+        if (!$updated) {
+            $filters[] = $filterData;
+        }
+    }
+    
+    file_put_contents($filtersFile, json_encode($filters, JSON_PRETTY_PRINT));
+    return $filterData['id'];
+}
+}
+
+// Delete a saved filter
+if (!function_exists('deleteFilter')) {
+function deleteFilter($id) {
+    $filtersFile = DATA_DIR . 'saved_filters.json';
+    $filters = getSavedFilters();
+    
+    foreach ($filters as $key => $filter) {
+        if ($filter['id'] == $id) {
+            unset($filters[$key]);
+            file_put_contents($filtersFile, json_encode(array_values($filters), JSON_PRETTY_PRINT));
+            return true;
+        }
+    }
+    return false;
+}
+}
+
+// Export invoices to CSV
+if (!function_exists('exportInvoicesToCSV')) {
+function exportInvoicesToCSV($invoices) {
+    // Define CSV headers
+    $headers = [
+        'Invoice ID',
+        'Document Type',
+        'Date',
+        'Due Date',
+        'Client Name',
+        'Client Email',
+        'Status',
+        'Subtotal',
+        'Tax',
+        'Total'
+    ];
+    
+    // Create a temporary file
+    $temp = fopen('php://temp', 'r+');
+    
+    // Add BOM for Excel UTF-8 compatibility
+    fputs($temp, chr(0xEF).chr(0xBB).chr(0xBF));
+    
+    // Add headers
+    fputcsv($temp, $headers);
+    
+    // Add data rows
+    foreach ($invoices as $invoice) {
+        $row = [
+            $invoice['id'],
+            $invoice['document_type'] ?? 'Invoice',
+            $invoice['date'],
+            $invoice['due_date'],
+            $invoice['client_name'],
+            $invoice['client_email'],
+            $invoice['status'],
+            number_format($invoice['subtotal'], 2),
+            number_format($invoice['tax'], 2),
+            number_format($invoice['total'], 2)
+        ];
+        fputcsv($temp, $row);
+    }
+    
+    // Reset pointer to beginning of file
+    rewind($temp);
+    
+    // Get the contents
+    $csv = stream_get_contents($temp);
+    fclose($temp);
+    
+    return $csv;
 }
 }
 
