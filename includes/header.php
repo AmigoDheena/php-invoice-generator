@@ -35,6 +35,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <a href="manage_products.php" class="nav-link <?php echo $current_page === 'manage_products.php' ? 'active' : ''; ?>">
                     <i class="fas fa-box mr-1"></i> Products
                 </a>
+                <a href="manage_data.php" class="nav-link <?php echo $current_page === 'manage_data.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-database mr-1"></i> Data Management
+                </a>
             </nav>
 
             <!-- Mobile Menu Button (only visible on small screens) -->
@@ -58,6 +61,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
             <a href="manage_products.php" class="mobile-nav-link <?php echo $current_page === 'manage_products.php' ? 'active' : ''; ?>">
                 <i class="fas fa-box mr-1"></i> Products
+            </a>
+            <a href="manage_data.php" class="mobile-nav-link <?php echo $current_page === 'manage_data.php' ? 'active' : ''; ?>">
+                <i class="fas fa-database mr-1"></i> Data Management
             </a>
         </div>
     </div>

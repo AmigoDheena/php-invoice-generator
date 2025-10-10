@@ -32,6 +32,9 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - Pagination for better performance with many invoices
 - Currency displayed as `Rs.` throughout the app and PDF (for Indian Rupees)
 - No database required—just PHP and file permissions
+- Comprehensive data management with backups, import/export, and MySQL migration
+- Cloud backup integration with Dropbox and Google Drive
+- Scheduled automatic backups
 
 ## Requirements
 
@@ -74,6 +77,11 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - **Manage Companies:** Add or edit your own company profiles under "Manage Companies". You can now add banking details for payment info.
 - **Navigate Pages:** Use pagination controls to browse through invoices when you have many.
 - **No Database:** All data is stored in `/data` as JSON files. You can back up or move your data easily.
+- **Manage Data:** Click "Data Management" to access backup, import/export, and MySQL migration features.
+- **Create Backups:** Click "Create Backup" to manually create a backup of all your data.
+- **Configure Cloud Backups:** Connect to Dropbox or Google Drive for automated cloud backups.
+- **Import/Export Data:** Use the import/export tools for data portability and migration.
+- **MySQL Migration:** Generate MySQL schema and migrate your data to a MySQL database when needed.
 
 ## Advanced Features
 
@@ -107,11 +115,22 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - **Visual Indicators**: Active filters and sort options are clearly displayed with visual indicators
 - **Responsive Design**: All filtering options work seamlessly on mobile and desktop devices
 
+### Data Management
+- **Automated Backups**: Schedule regular backups to keep your data safe
+- **Cloud Integration**: Connect to Dropbox or Google Drive for cloud storage backups
+- **Backup History**: View and manage your backup history with detailed information
+- **Data Export**: Export all your data in a ZIP archive for portability
+- **Data Import**: Import data from a ZIP archive for easy migration or restoration
+- **MySQL Migration**: Generate MySQL schema and migrate your data to a MySQL database
+- **Storage Statistics**: Get insights into your data storage usage and growth
+
 Notes:
 - Pagination is implemented server-side by slicing the JSON invoice array. For very large datasets you may want to switch to a database-backed approach for better performance.
 - Client data reuse is based on unique email addresses across all invoices.
 - Product catalog supports unlimited number of products and categories.
 - Saved filters are stored in the `data/saved_filters.json` file.
+- Cloud backup settings are stored in the `data/cloud_backup_settings.json` file.
+- Automatic backups require setting up a cron job to call `auto_backup.php` at your desired frequency.
 
 
 ## File Structure
@@ -125,12 +144,47 @@ Notes:
 - `/saved_filters.php` — Manage saved filter combinations
 - `/manage_companies.php` — Manage company profiles and banking details
 - `/manage_products.php` — Manage products/services catalog
+- `/manage_data.php` — Data management features (backup, import/export, MySQL migration)
+- `/download_backup.php` — Download backup files securely
+- `/import_data.php` — Import data from uploaded ZIP archives
+- `/save_cloud_settings.php` — Save cloud backup configuration
+- `/migrate_to_mysql.php` — Generate schema and migrate data to MySQL
+- `/auto_backup.php` — Automated backup endpoint (for cron jobs)
 - `/delete_invoice.php` — Delete invoice
 - `/includes/functions.php` — Core PHP logic
 - `/data/` — JSON data storage (invoices, companies, products, saved filters)
+- `/data/backups/` — Stored backup archives
+- `/data/exports/` — Stored export archives
+- `/data/schemas/` — Generated MySQL schemas
 - `/vendor/` — Composer dependencies (dompdf, etc.)
 - `/assets/` — CSS, JS, and static files
 - `/ajax/` — AJAX endpoints for dynamic data loading
+
+## Setting Up Automated Backups
+
+To set up automated backups:
+
+1. **Edit Security Token:**
+   Open `auto_backup.php` and replace `YOUR_SECURE_TOKEN_HERE` with a secure random string of your choice.
+
+2. **Set Up Cron Job (Linux/Unix):**
+   ```
+   # Daily backup at 3:00 AM
+   0 3 * * * curl https://your-domain.com/path-to/auto_backup.php?token=YOUR_SECURE_TOKEN_HERE > /dev/null 2>&1
+   ```
+
+3. **Set Up Task Scheduler (Windows):**
+   Create a scheduled task that runs a command like:
+   ```
+   curl http://localhost/path-to/auto_backup.php?token=YOUR_SECURE_TOKEN_HERE
+   ```
+
+4. **Configure Cloud Backups:**
+   - Go to "Data Management" in the application
+   - Click on the "Backup" tab
+   - Enter your cloud service API key and settings
+   - Enable automatic backups
+   - Select your desired backup frequency
 
 ## Development
 
@@ -139,6 +193,7 @@ Notes:
 - PDF export uses [dompdf](https://github.com/dompdf/dompdf).
 - No database required—just PHP and file permissions.
 - Currency is consistently shown as `Rs.` for Indian Rupees in all views and PDFs.
+- Cloud storage integration uses custom API libraries (implement in `includes/cloud/` for your chosen provider).
 
 ## .gitignore
 

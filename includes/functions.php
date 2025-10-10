@@ -13,11 +13,31 @@ if (!defined('PRODUCTS_FILE')) {
     define('PRODUCTS_FILE', DATA_DIR . 'products.json');
 }
 
+// Additional data directories
+if (!defined('BACKUPS_DIR')) {
+    define('BACKUPS_DIR', DATA_DIR . 'backups/');
+}
+if (!defined('EXPORTS_DIR')) {
+    define('EXPORTS_DIR', DATA_DIR . 'exports/');
+}
+if (!defined('SCHEMAS_DIR')) {
+    define('SCHEMAS_DIR', DATA_DIR . 'schemas/');
+}
+
 // Initialize JSON files if they don't exist
 if (!function_exists('initializeDataFiles')) {
 function initializeDataFiles() {
+    // Create main data directory if it doesn't exist
     if (!file_exists(DATA_DIR)) {
         mkdir(DATA_DIR, 0755, true);
+    }
+    
+    // Create additional data directories
+    $directories = [BACKUPS_DIR, EXPORTS_DIR, SCHEMAS_DIR];
+    foreach ($directories as $dir) {
+        if (!file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
     }
     
     if (!file_exists(INVOICES_FILE)) {
@@ -735,6 +755,577 @@ function exportInvoicesToCSV($invoices) {
     fclose($temp);
     
     return $csv;
+}
+}
+
+// Data Management Functions
+
+// Get storage statistics for all data files
+if (!function_exists('getDataStorageStats')) {
+function getDataStorageStats() {
+    $stats = [
+        'invoices' => [
+            'count' => 0,
+            'size' => '0 KB'
+        ],
+        'companies' => [
+            'count' => 0,
+            'size' => '0 KB'
+        ],
+        'products' => [
+            'count' => 0,
+            'size' => '0 KB'
+        ],
+        'total_size' => '0 KB',
+        'last_backup' => null,
+        'backup_history' => []
+    ];
+    
+    // Invoices stats
+    if (file_exists(INVOICES_FILE)) {
+        $invoices = getInvoices();
+        $stats['invoices']['count'] = count($invoices);
+        $stats['invoices']['size'] = formatFileSize(filesize(INVOICES_FILE));
+    }
+    
+    // Companies stats
+    if (file_exists(COMPANIES_FILE)) {
+        $companies = getCompanies();
+        $stats['companies']['count'] = count($companies);
+        $stats['companies']['size'] = formatFileSize(filesize(COMPANIES_FILE));
+    }
+    
+    // Products stats
+    if (file_exists(PRODUCTS_FILE)) {
+        $productsData = json_decode(file_get_contents(PRODUCTS_FILE), true) ?: ['products' => []];
+        $stats['products']['count'] = count($productsData['products'] ?? []);
+        $stats['products']['size'] = formatFileSize(filesize(PRODUCTS_FILE));
+    }
+    
+    // Calculate total size
+    $totalBytes = filesize(INVOICES_FILE) + filesize(COMPANIES_FILE);
+    if (file_exists(PRODUCTS_FILE)) {
+        $totalBytes += filesize(PRODUCTS_FILE);
+    }
+    if (file_exists(DATA_DIR . 'saved_filters.json')) {
+        $totalBytes += filesize(DATA_DIR . 'saved_filters.json');
+    }
+    
+    $stats['total_size'] = formatFileSize($totalBytes);
+    
+    // Get backup history
+    $backupsDir = DATA_DIR . 'backups';
+    if (is_dir($backupsDir)) {
+        $backupFiles = glob($backupsDir . '/*.zip');
+        $backupHistory = [];
+        
+        foreach ($backupFiles as $file) {
+            $filename = basename($file);
+            if (preg_match('/backup_(\d{8})_(\d{6})\.zip/', $filename, $matches)) {
+                $dateStr = $matches[1] . '_' . $matches[2];
+                $timestamp = strtotime(
+                    substr($matches[1], 0, 4) . '-' . 
+                    substr($matches[1], 4, 2) . '-' . 
+                    substr($matches[1], 6, 2) . ' ' .
+                    substr($matches[2], 0, 2) . ':' . 
+                    substr($matches[2], 2, 2) . ':' . 
+                    substr($matches[2], 4, 2)
+                );
+                
+                $backupHistory[] = [
+                    'file' => $file,
+                    'timestamp' => $timestamp,
+                    'type' => strpos($filename, 'auto_') !== false ? 'automatic' : 'manual',
+                    'size' => formatFileSize(filesize($file)),
+                    'status' => 'success'
+                ];
+            }
+        }
+        
+        // Sort by timestamp (newest first)
+        usort($backupHistory, function($a, $b) {
+            return $b['timestamp'] - $a['timestamp'];
+        });
+        
+        $stats['backup_history'] = $backupHistory;
+        
+        // Get last backup timestamp
+        if (!empty($backupHistory)) {
+            $stats['last_backup'] = $backupHistory[0]['timestamp'];
+        }
+    }
+    
+    return $stats;
+}
+}
+
+// Format file size in human-readable format
+if (!function_exists('formatFileSize')) {
+function formatFileSize($bytes) {
+    if ($bytes > 1048576) {
+        return round($bytes / 1048576, 2) . ' MB';
+    } elseif ($bytes > 1024) {
+        return round($bytes / 1024, 2) . ' KB';
+    } else {
+        return $bytes . ' bytes';
+    }
+}
+}
+
+// Create a backup archive of all data files
+if (!function_exists('createBackupArchive')) {
+function createBackupArchive($autoBackup = false) {
+    // Create backups directory if it doesn't exist
+    $backupsDir = DATA_DIR . 'backups';
+    if (!file_exists($backupsDir)) {
+        if (!mkdir($backupsDir, 0755, true)) {
+            return false;
+        }
+    }
+    
+    // Generate backup filename with timestamp
+    $timestamp = date('Ymd_His');
+    $prefix = $autoBackup ? 'auto_backup_' : 'backup_';
+    $backupFile = $backupsDir . '/' . $prefix . $timestamp . '.zip';
+    
+    // Create ZIP archive
+    $zip = new ZipArchive();
+    if ($zip->open($backupFile, ZipArchive::CREATE) !== true) {
+        return false;
+    }
+    
+    // Add data files to the archive
+    $dataFiles = [
+        'invoices.json' => INVOICES_FILE,
+        'companies.json' => COMPANIES_FILE,
+        'products.json' => PRODUCTS_FILE
+    ];
+    
+    foreach ($dataFiles as $filename => $filepath) {
+        if (file_exists($filepath)) {
+            $zip->addFile($filepath, $filename);
+        }
+    }
+    
+    // Add saved filters if exists
+    if (file_exists(DATA_DIR . 'saved_filters.json')) {
+        $zip->addFile(DATA_DIR . 'saved_filters.json', 'saved_filters.json');
+    }
+    
+    // Close the archive
+    $zip->close();
+    
+    return $backupFile;
+}
+}
+
+// Export all data to a ZIP archive
+if (!function_exists('exportAllData')) {
+function exportAllData() {
+    // Create exports directory if it doesn't exist
+    $exportsDir = DATA_DIR . 'exports';
+    if (!file_exists($exportsDir)) {
+        if (!mkdir($exportsDir, 0755, true)) {
+            return false;
+        }
+    }
+    
+    // Generate export filename with timestamp
+    $timestamp = date('Ymd_His');
+    $exportFile = $exportsDir . '/export_' . $timestamp . '.zip';
+    
+    // Create ZIP archive
+    $zip = new ZipArchive();
+    if ($zip->open($exportFile, ZipArchive::CREATE) !== true) {
+        return false;
+    }
+    
+    // Add data files to the archive
+    $dataFiles = [
+        'invoices.json' => INVOICES_FILE,
+        'companies.json' => COMPANIES_FILE,
+        'products.json' => PRODUCTS_FILE
+    ];
+    
+    foreach ($dataFiles as $filename => $filepath) {
+        if (file_exists($filepath)) {
+            $zip->addFile($filepath, $filename);
+        }
+    }
+    
+    // Add saved filters if exists
+    if (file_exists(DATA_DIR . 'saved_filters.json')) {
+        $zip->addFile(DATA_DIR . 'saved_filters.json', 'saved_filters.json');
+    }
+    
+    // Close the archive
+    $zip->close();
+    
+    return $exportFile;
+}
+}
+
+// Import data from a ZIP archive
+if (!function_exists('importAllData')) {
+function importAllData($zipFile) {
+    // Temporary directory for extraction
+    $tempDir = sys_get_temp_dir() . '/invoice_import_' . uniqid();
+    if (!mkdir($tempDir, 0755, true)) {
+        return "Failed to create temporary directory";
+    }
+    
+    // Open the ZIP archive
+    $zip = new ZipArchive();
+    if ($zip->open($zipFile) !== true) {
+        return "Failed to open ZIP archive";
+    }
+    
+    // Extract to temporary directory
+    $zip->extractTo($tempDir);
+    $zip->close();
+    
+    // Validate required files
+    $requiredFiles = ['invoices.json', 'companies.json'];
+    foreach ($requiredFiles as $file) {
+        if (!file_exists($tempDir . '/' . $file)) {
+            return "Invalid backup archive: missing $file";
+        }
+    }
+    
+    // Import data files
+    $dataFiles = [
+        'invoices.json' => INVOICES_FILE,
+        'companies.json' => COMPANIES_FILE,
+        'products.json' => PRODUCTS_FILE,
+        'saved_filters.json' => DATA_DIR . 'saved_filters.json'
+    ];
+    
+    foreach ($dataFiles as $filename => $destination) {
+        if (file_exists($tempDir . '/' . $filename)) {
+            // Validate JSON structure
+            $content = file_get_contents($tempDir . '/' . $filename);
+            $json = json_decode($content, true);
+            if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
+                return "Invalid JSON data in $filename";
+            }
+            
+            // Create a backup of existing file
+            if (file_exists($destination)) {
+                copy($destination, $destination . '.bak');
+            }
+            
+            // Copy imported file
+            if (!copy($tempDir . '/' . $filename, $destination)) {
+                return "Failed to import $filename";
+            }
+        }
+    }
+    
+    // Clean up temp directory
+    array_map('unlink', glob($tempDir . '/*'));
+    rmdir($tempDir);
+    
+    return true;
+}
+}
+
+// Get cloud backup settings
+if (!function_exists('getCloudBackupSettings')) {
+function getCloudBackupSettings() {
+    $settingsFile = DATA_DIR . 'cloud_backup_settings.json';
+    
+    if (!file_exists($settingsFile)) {
+        return null;
+    }
+    
+    $settings = json_decode(file_get_contents($settingsFile), true);
+    return $settings;
+}
+}
+
+// Save cloud backup settings
+if (!function_exists('saveCloudBackupSettings')) {
+function saveCloudBackupSettings($settings) {
+    $settingsFile = DATA_DIR . 'cloud_backup_settings.json';
+    $result = file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT));
+    return $result !== false;
+}
+}
+
+// Disable cloud backup
+if (!function_exists('disableCloudBackup')) {
+function disableCloudBackup() {
+    $settings = getCloudBackupSettings();
+    if ($settings) {
+        $settings['active'] = false;
+        return saveCloudBackupSettings($settings);
+    }
+    return false;
+}
+}
+
+// Validate cloud backup settings
+if (!function_exists('validateCloudBackupSettings')) {
+function validateCloudBackupSettings($settings) {
+    $requiredFields = ['provider', 'api_key'];
+    foreach ($requiredFields as $field) {
+        if (!isset($settings[$field]) || empty($settings[$field])) {
+            return false;
+        }
+    }
+    return true;
+}
+}
+
+// Test cloud backup connection
+if (!function_exists('testCloudBackupConnection')) {
+function testCloudBackupConnection($settings) {
+    // Check if cloud providers file exists
+    if (!file_exists(__DIR__ . '/cloud/providers.php')) {
+        return "Cloud provider integration not available";
+    }
+    
+    require_once __DIR__ . '/cloud/providers.php';
+    
+    if (!validateCloudBackupSettings($settings)) {
+        return "Invalid cloud backup settings";
+    }
+    
+    $provider = $settings['provider'];
+    $apiKey = $settings['api_key'];
+    
+    $credentials = [
+        'api_key' => $apiKey,
+        // Add other credentials as needed
+    ];
+    
+    $cloudStorage = CloudStorageFactory::create($provider, $credentials);
+    if (!$cloudStorage) {
+        return "Unsupported cloud provider: " . ucfirst($provider);
+    }
+    
+    if (!$cloudStorage->authenticate($credentials)) {
+        return "Failed to authenticate with " . ucfirst($provider);
+    }
+    
+    return true;
+}
+}
+
+// Generate MySQL schema
+if (!function_exists('generateMySQLSchema')) {
+function generateMySQLSchema() {
+    // Create schemas directory if it doesn't exist
+    $schemasDir = DATA_DIR . 'schemas';
+    if (!file_exists($schemasDir)) {
+        if (!mkdir($schemasDir, 0755, true)) {
+            return false;
+        }
+    }
+    
+    // Generate schema filename with timestamp
+    $timestamp = date('Ymd_His');
+    $schemaFile = $schemasDir . '/mysql_schema_' . $timestamp . '.sql';
+    
+    // Create schema SQL
+    $schema = "-- MySQL Schema for Invoice Generator\n";
+    $schema .= "-- Generated on " . date('Y-m-d H:i:s') . "\n\n";
+    
+    // Invoices table
+    $schema .= "CREATE TABLE IF NOT EXISTS `invoices` (\n";
+    $schema .= "  `id` varchar(20) NOT NULL,\n";
+    $schema .= "  `date` date NOT NULL,\n";
+    $schema .= "  `due_date` date NOT NULL,\n";
+    $schema .= "  `client_name` varchar(255) NOT NULL,\n";
+    $schema .= "  `client_email` varchar(255) NOT NULL,\n";
+    $schema .= "  `client_address` text NOT NULL,\n";
+    $schema .= "  `company_id` int(11) NOT NULL,\n";
+    $schema .= "  `subtotal` decimal(10,2) NOT NULL,\n";
+    $schema .= "  `tax` decimal(10,2) NOT NULL,\n";
+    $schema .= "  `total` decimal(10,2) NOT NULL,\n";
+    $schema .= "  `apply_tax` tinyint(1) NOT NULL DEFAULT '1',\n";
+    $schema .= "  `document_type` varchar(20) NOT NULL DEFAULT 'Invoice',\n";
+    $schema .= "  `status` varchar(20) NOT NULL DEFAULT 'Unpaid',\n";
+    $schema .= "  `notes` text,\n";
+    $schema .= "  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n";
+    $schema .= "  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n";
+    $schema .= "  PRIMARY KEY (`id`)\n";
+    $schema .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n";
+    
+    // Invoice items table
+    $schema .= "CREATE TABLE IF NOT EXISTS `invoice_items` (\n";
+    $schema .= "  `id` int(11) NOT NULL AUTO_INCREMENT,\n";
+    $schema .= "  `invoice_id` varchar(20) NOT NULL,\n";
+    $schema .= "  `product_id` int(11) DEFAULT NULL,\n";
+    $schema .= "  `description` varchar(255) NOT NULL,\n";
+    $schema .= "  `quantity` decimal(10,2) NOT NULL,\n";
+    $schema .= "  `price` decimal(10,2) NOT NULL,\n";
+    $schema .= "  PRIMARY KEY (`id`),\n";
+    $schema .= "  KEY `invoice_id` (`invoice_id`),\n";
+    $schema .= "  CONSTRAINT `invoice_items_ibfk_1` FOREIGN KEY (`invoice_id`) REFERENCES `invoices` (`id`) ON DELETE CASCADE\n";
+    $schema .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n";
+    
+    // Companies table
+    $schema .= "CREATE TABLE IF NOT EXISTS `companies` (\n";
+    $schema .= "  `id` int(11) NOT NULL AUTO_INCREMENT,\n";
+    $schema .= "  `name` varchar(255) NOT NULL,\n";
+    $schema .= "  `email` varchar(255) NOT NULL,\n";
+    $schema .= "  `address` text NOT NULL,\n";
+    $schema .= "  `phone` varchar(50) DEFAULT NULL,\n";
+    $schema .= "  `banking_details` text,\n";
+    $schema .= "  `logo` varchar(255) DEFAULT NULL,\n";
+    $schema .= "  PRIMARY KEY (`id`)\n";
+    $schema .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n";
+    
+    // Products table
+    $schema .= "CREATE TABLE IF NOT EXISTS `products` (\n";
+    $schema .= "  `id` int(11) NOT NULL AUTO_INCREMENT,\n";
+    $schema .= "  `name` varchar(255) NOT NULL,\n";
+    $schema .= "  `description` text,\n";
+    $schema .= "  `price` decimal(10,2) NOT NULL,\n";
+    $schema .= "  `sku` varchar(50) DEFAULT NULL,\n";
+    $schema .= "  `category` varchar(100) DEFAULT NULL,\n";
+    $schema .= "  PRIMARY KEY (`id`)\n";
+    $schema .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n";
+    
+    // Saved filters table
+    $schema .= "CREATE TABLE IF NOT EXISTS `saved_filters` (\n";
+    $schema .= "  `id` int(11) NOT NULL AUTO_INCREMENT,\n";
+    $schema .= "  `name` varchar(255) NOT NULL,\n";
+    $schema .= "  `filters` text NOT NULL,\n";
+    $schema .= "  `sort_by` varchar(50) DEFAULT NULL,\n";
+    $schema .= "  `sort_order` varchar(4) DEFAULT 'desc',\n";
+    $schema .= "  PRIMARY KEY (`id`)\n";
+    $schema .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n";
+    
+    // Write schema to file
+    if (file_put_contents($schemaFile, $schema) === false) {
+        return false;
+    }
+    
+    return $schemaFile;
+}
+}
+
+// Migrate data to MySQL
+if (!function_exists('migrateToMySQL')) {
+function migrateToMySQL($host, $dbname, $username, $password) {
+    try {
+        // Connect to MySQL server
+        $dsn = "mysql:host={$host};dbname={$dbname};charset=utf8mb4";
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+        
+        $pdo = new PDO($dsn, $username, $password, $options);
+        
+        // Create database schema
+        $schemaFile = generateMySQLSchema();
+        if (!$schemaFile) {
+            return "Failed to generate schema";
+        }
+        
+        $schema = file_get_contents($schemaFile);
+        $statements = explode(';', $schema);
+        
+        foreach ($statements as $statement) {
+            $statement = trim($statement);
+            if (!empty($statement)) {
+                $pdo->exec($statement);
+            }
+        }
+        
+        // Migrate companies data
+        $companies = getCompanies();
+        $stmt = $pdo->prepare("INSERT INTO companies (id, name, email, address, phone, banking_details, logo) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        
+        foreach ($companies as $company) {
+            $stmt->execute([
+                $company['id'],
+                $company['name'],
+                $company['email'],
+                $company['address'],
+                $company['phone'] ?? null,
+                $company['banking_details'] ?? null,
+                $company['logo'] ?? null
+            ]);
+        }
+        
+        // Migrate products data
+        $products = getProducts();
+        $stmt = $pdo->prepare("INSERT INTO products (id, name, description, price, sku, category) VALUES (?, ?, ?, ?, ?, ?)");
+        
+        foreach ($products as $product) {
+            $stmt->execute([
+                $product['id'],
+                $product['name'],
+                $product['description'] ?? null,
+                $product['price'],
+                $product['sku'] ?? null,
+                $product['category'] ?? null
+            ]);
+        }
+        
+        // Migrate invoices and invoice items data
+        $invoices = getInvoices();
+        $invoiceStmt = $pdo->prepare("INSERT INTO invoices (id, date, due_date, client_name, client_email, client_address, company_id, subtotal, tax, total, apply_tax, document_type, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $itemStmt = $pdo->prepare("INSERT INTO invoice_items (invoice_id, product_id, description, quantity, price) VALUES (?, ?, ?, ?, ?)");
+        
+        foreach ($invoices as $invoice) {
+            $invoiceStmt->execute([
+                $invoice['id'],
+                $invoice['date'],
+                $invoice['due_date'],
+                $invoice['client_name'],
+                $invoice['client_email'],
+                $invoice['client_address'],
+                $invoice['company_id'],
+                $invoice['subtotal'],
+                $invoice['tax'],
+                $invoice['total'],
+                $invoice['apply_tax'] ? 1 : 0,
+                $invoice['document_type'] ?? 'Invoice',
+                $invoice['status'],
+                $invoice['notes'] ?? null
+            ]);
+            
+            foreach ($invoice['items'] as $item) {
+                $itemStmt->execute([
+                    $invoice['id'],
+                    $item['product_id'] ?? null,
+                    $item['description'],
+                    $item['quantity'],
+                    $item['price']
+                ]);
+            }
+        }
+        
+        // Migrate saved filters data if exists
+        if (file_exists(DATA_DIR . 'saved_filters.json')) {
+            $filters = getSavedFilters();
+            $stmt = $pdo->prepare("INSERT INTO saved_filters (id, name, filters, sort_by, sort_order) VALUES (?, ?, ?, ?, ?)");
+            
+            foreach ($filters as $filter) {
+                $stmt->execute([
+                    $filter['id'],
+                    $filter['name'],
+                    json_encode($filter['filters'] ?? []),
+                    $filter['sort_by'] ?? 'date',
+                    $filter['sort_order'] ?? 'desc'
+                ]);
+            }
+        }
+        
+        return true;
+        
+    } catch (PDOException $e) {
+        return "Database error: " . $e->getMessage();
+    } catch (Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
 }
 }
 
