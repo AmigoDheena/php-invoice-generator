@@ -34,13 +34,17 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - No database required—just PHP and file permissions
 - Comprehensive data management with backups, import/export, and MySQL migration
 - Cloud backup integration with Dropbox and Google Drive
-- Scheduled automatic backups
+- Scheduled automatic backups with configurable retention policies
+- Built-in troubleshooting tools for logo and GD extension issues
+- AJAX-powered product search and autocomplete
+- Utility tools for testing and diagnostics
 
 ## Requirements
 
 - PHP 7.4 or higher
 - Composer (for PDF export)
 - Web server (Apache, Nginx, XAMPP, etc.)
+- PHP GD Extension (optional but recommended for logo display in PDFs)
 
 ## Installation
 
@@ -54,9 +58,11 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
    composer install
    ```
 3. **Set permissions:**
-   Ensure the `data/` directory is writable by the web server:
+   Ensure the `data/` and `uploads/` directories are writable by the web server:
    ```
    chmod 755 data
+   mkdir -p uploads/logos
+   chmod 755 uploads uploads/logos
    ```
 4. **Access the app:**
    Open your browser and go to `http://localhost/path-to/php-invoice-generator`
@@ -82,6 +88,8 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 - **Configure Cloud Backups:** Connect to Dropbox or Google Drive for automated cloud backups.
 - **Import/Export Data:** Use the import/export tools for data portability and migration.
 - **MySQL Migration:** Generate MySQL schema and migrate your data to a MySQL database when needed.
+- **Troubleshoot Logo Issues:** Use `logo_test.php` to diagnose logo display problems in PDF invoices.
+- **Enable GD Extension:** Use `enable_gd.php` for step-by-step instructions to enable PHP GD extension for logo support.
 
 ## Advanced Features
 
@@ -135,29 +143,51 @@ Notes:
 
 ## File Structure
 
+### Main Application Files
 - `/index.php` — Dashboard (list invoices)
 - `/create_invoice.php` — Create new invoice
 - `/edit_invoice.php` — Edit existing invoice
 - `/view_invoice.php` — View invoice details
 - `/download_pdf.php` — Export invoice as PDF (with banking details and Rs. currency)
-- `/export_csv.php` — Export invoice list to CSV based on filters
-- `/saved_filters.php` — Manage saved filter combinations
-- `/manage_companies.php` — Manage company profiles and banking details
+- `/delete_invoice.php` — Delete invoice
+
+### Product & Filter Management
 - `/manage_products.php` — Manage products/services catalog
+- `/saved_filters.php` — Manage saved filter combinations
+- `/export_csv.php` — Export invoice list to CSV based on filters
+
+### Company Management
+- `/manage_companies.php` — Manage company profiles and banking details
+
+### Data Management
 - `/manage_data.php` — Data management features (backup, import/export, MySQL migration)
 - `/download_backup.php` — Download backup files securely
 - `/import_data.php` — Import data from uploaded ZIP archives
+- `/auto_backup.php` — Automated backup endpoint (for cron jobs)
+- `/purge_old_backups.php` — Clean up old backup files (for cron jobs)
+
+### Cloud & Database Features
 - `/save_cloud_settings.php` — Save cloud backup configuration
 - `/migrate_to_mysql.php` — Generate schema and migrate data to MySQL
-- `/auto_backup.php` — Automated backup endpoint (for cron jobs)
-- `/delete_invoice.php` — Delete invoice
+
+### Helper & Diagnostic Tools
+- `/logo_test.php` — Logo troubleshooting tool for PDF invoice issues
+- `/enable_gd.php` — PHP GD Extension helper and installation guide
+- `/test_data_functions.php` — Data functions testing utility
+
+### Core Directories
 - `/includes/functions.php` — Core PHP logic
+- `/includes/cloud/` — Cloud storage provider integrations
 - `/data/` — JSON data storage (invoices, companies, products, saved filters)
 - `/data/backups/` — Stored backup archives
 - `/data/exports/` — Stored export archives
 - `/data/schemas/` — Generated MySQL schemas
+- `/uploads/logos/` — Company logo storage
 - `/vendor/` — Composer dependencies (dompdf, etc.)
 - `/assets/` — CSS, JS, and static files
+  - `/assets/css/` — Custom stylesheets
+  - `/assets/js/` — JavaScript files (product selection, main logic)
+  - `/assets/img/` — Images and logo
 - `/ajax/` — AJAX endpoints for dynamic data loading
 
 ## Setting Up Automated Backups
@@ -185,6 +215,56 @@ To set up automated backups:
    - Enter your cloud service API key and settings
    - Enable automatic backups
    - Select your desired backup frequency
+
+5. **Set Up Automatic Backup Cleanup (Optional):**
+   To prevent excessive storage usage, set up a cron job to purge old backups:
+   ```
+   # Weekly cleanup on Sunday at 2:00 AM
+   0 2 * * 0 curl http://localhost/path-to/purge_old_backups.php?token=YOUR_SECURE_TOKEN_HERE > /dev/null 2>&1
+   ```
+   Note: Edit `purge_old_backups.php` to set your secure token and configure retention settings.
+
+## Troubleshooting
+
+### Logo Issues in PDF Invoices
+
+If company logos are not appearing in your PDF invoices, you can use the built-in troubleshooting tools:
+
+1. **Logo Test Tool** (`logo_test.php`):
+   - Navigate to `http://localhost/path-to/php-invoice-generator/logo_test.php`
+   - This tool diagnoses logo display issues and checks:
+     - GD extension status
+     - Logo directory permissions
+     - Company logo file paths and accessibility
+   - Follow the on-screen troubleshooting steps
+
+2. **GD Extension Helper** (`enable_gd.php`):
+   - Navigate to `http://localhost/path-to/php-invoice-generator/enable_gd.php`
+   - Provides step-by-step instructions for enabling PHP GD extension
+   - Platform-specific instructions for:
+     - XAMPP on Windows
+     - Linux/Unix systems
+     - General Windows installations
+
+### Common Issues
+
+**GD Extension Not Installed:**
+- **XAMPP (Windows):** Edit `C:\xampp\php\php.ini`, find `;extension=gd`, remove the semicolon, and restart Apache
+- **Linux/Ubuntu:** Run `sudo apt-get install php-gd` and restart your web server
+- **CentOS/RHEL:** Run `sudo yum install php-gd` and restart your web server
+
+**Logo Upload Issues:**
+- Ensure the `uploads/logos/` directory exists and has proper permissions (755)
+- Verify uploaded logo files have read permissions (644)
+- Supported formats: JPG, PNG, GIF
+
+**PDF Generation Issues:**
+- Make sure Composer dependencies are installed: `composer install`
+- Check if dompdf library is available in `/vendor/` directory
+
+**Data File Permissions:**
+- The `data/` directory must be writable by the web server (755)
+- All JSON files in `data/` should be readable/writable (644)
 
 ## Development
 
