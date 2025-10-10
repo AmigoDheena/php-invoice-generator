@@ -12,31 +12,56 @@ A simple, modern, and self-hosted invoice generator web app built with PHP and T
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
 ![No Database](https://img.shields.io/badge/No%20Database-JSON%20Storage-44cc11)
 
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Advanced Features](#advanced-features)
+- [File Structure](#file-structure)
+- [Setting Up Automated Backups](#setting-up-automated-backups)
+- [Troubleshooting](#troubleshooting)
+- [Security Best Practices](#security-best-practices)
+- [Development](#development)
+- [Contributors](#contributors)
+- [License](#license)
+- [Credits](#credits)
+
 ## Features
 
-- Create, edit, and delete invoices
+### Core Invoice Management
+- Create, edit, and delete invoices with ease
 - Add multiple items per invoice (description, quantity, price)
 - Option to include or exclude tax (18%)
+- Export invoices as professional PDF documents (using dompdf)
+- Currency displayed as `Rs.` (Indian Rupees) throughout the app and PDFs
+- Add and display company banking details on invoices and PDFs
+
+### Company & Product Management
 - Manage multiple company profiles ("Invoice From")
-- Product & Service Catalog with autocomplete selection when creating invoices
+- Product & Service Catalog with autocomplete selection
+- Client data reuse for quick invoice creation with returning clients
+- AJAX-powered product search and autocomplete
+
+### Search & Organization
 - Advanced Search & Filtering with custom saved filters
 - Column sorting for invoice management
 - Export filtered invoice lists to CSV
-- Add and display company banking details on invoices and PDFs
-- Client data reuse for quick invoice creation with returning clients
-- All data stored in JSON files (no SQL or DB setup needed)
-- Export invoices as PDF (using dompdf)
-- Responsive UI with Tailwind CSS
-- Edit invoices at any time
-- List and manage all invoices from the dashboard
 - Pagination for better performance with many invoices
-- Currency displayed as `Rs.` throughout the app and PDF (for Indian Rupees)
-- No database required—just PHP and file permissions
+- List and manage all invoices from the dashboard
+
+### Data Management & Backup
+- All data stored in JSON files (no SQL or DB setup needed)
 - Comprehensive data management with backups, import/export, and MySQL migration
 - Cloud backup integration with Dropbox and Google Drive
 - Scheduled automatic backups with configurable retention policies
+- No database required—just PHP and file permissions
+
+### User Experience
+- Responsive UI with Tailwind CSS
+- Edit invoices at any time
 - Built-in troubleshooting tools for logo and GD extension issues
-- AJAX-powered product search and autocomplete
 - Utility tools for testing and diagnostics
 
 ## Requirements
@@ -266,6 +291,15 @@ If company logos are not appearing in your PDF invoices, you can use the built-i
 - The `data/` directory must be writable by the web server (755)
 - All JSON files in `data/` should be readable/writable (644)
 
+## Security Best Practices
+
+- **Secure Tokens:** Always replace `YOUR_SECURE_TOKEN_HERE` with a strong, random string in `auto_backup.php` and `purge_old_backups.php`
+- **File Permissions:** Ensure proper file permissions (755 for directories, 644 for files)
+- **Access Control:** Consider adding authentication for production deployments
+- **Data Protection:** The `/data/` directory contains sensitive information—ensure it's not publicly accessible via web server configuration
+- **HTTPS:** Use HTTPS in production to protect data in transit
+- **Regular Backups:** Set up automated backups and test restoration procedures regularly
+
 ## Development
 
 - All business logic is in `includes/functions.php`.
@@ -274,10 +308,16 @@ If company logos are not appearing in your PDF invoices, you can use the built-i
 - No database required—just PHP and file permissions.
 - Currency is consistently shown as `Rs.` for Indian Rupees in all views and PDFs.
 - Cloud storage integration uses custom API libraries (implement in `includes/cloud/` for your chosen provider).
+- For custom development, see the helper tools (`test_data_functions.php`) for testing data operations.
 
 ## .gitignore
 
-- `/data/` and `/vendor/` are ignored by default (see `.gitignore`).
+The following directories are ignored by default (see `.gitignore`):
+- `/data/` — All invoice and company data (prevents accidental data commits)
+- `/vendor/` — Composer dependencies (should be installed locally via `composer install`)
+- `/uploads/` — User-uploaded logos and assets
+
+Note: These directories are automatically created during installation and should not be committed to version control for security and portability reasons.
 
 ## Contributors
 
