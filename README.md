@@ -207,6 +207,6 @@ To set up automated backups:
 
 MIT License. Free for personal and commercial use.
 
-## Credits
+## Contribute
 
-This project was developed by [AmigoDheena](https://github.com/AmigoDheena). If you find this project useful, please consider starring the repository on GitHub or contributing to its development.
+If you find this project useful, please consider starring the repository on GitHub or contributing to its development.
