@@ -375,9 +375,12 @@ $dompdf->setPaper('A4', 'portrait');
 // Render the HTML as PDF
 $dompdf->render();
 
-// Set the PDF filename
+// Set the PDF filename with client name
 $documentType = $invoice['document_type'] ?? 'Invoice';
-$filename = $documentType . '_' . str_replace(['INV-', ' '], ['', '_'], $invoice['id']) . '.pdf';
+$clientName = preg_replace('/[^a-zA-Z0-9\s]/', '', $invoice['client_name']); // Remove special characters
+$clientName = preg_replace('/\s+/', '_', trim($clientName)); // Replace spaces with underscores
+$invoiceNumber = str_replace(['INV-', ' '], ['', '_'], $invoice['id']);
+$filename = $clientName . '_' . $documentType . '_' . $invoiceNumber . '.pdf';
 
 // Output the generated PDF
 $dompdf->stream($filename, ['Attachment' => true]);
