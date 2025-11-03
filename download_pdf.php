@@ -1,22 +1,70 @@
 <?php
-// Include the autoloader first
-if (file_exists('vendor/autoload.php')) {
-    require_once 'vendor/autoload.php';
+// Robust loader: try Composer autoload, include helpers, then fall back to direct tcpdf.php require
+$baseDir = __DIR__;
+
+// 1) Try Composer autoloader if present
+$autoloadPath = $baseDir . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+if (file_exists($autoloadPath)) {
+    require_once $autoloadPath;
 }
 
-// Then include functions if needed
+// 2) Include project helper functions if not already available
 if (!function_exists('getInvoiceById')) {
-    require_once 'includes/functions.php';
+    $functionsPath = $baseDir . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'functions.php';
+    if (file_exists($functionsPath)) {
+        require_once $functionsPath;
+    }
 }
 
-// Check if the TCPDF library is available
+// 3) If TCPDF class not yet available, try the common manual paths where tcpdf.php might live
 if (!class_exists('TCPDF')) {
-    echo "<div style='background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px; font-family: Arial, sans-serif;'>";
-    echo "<h2 style='color: #0d6efd;'>PDF Generation Not Available</h2>";
-    echo "<p>The TCPDF library is not installed.</p>";
-    echo "<p><strong>Install it by running:</strong></p>";
-    echo "<pre style='background-color: #f1f1f1; padding: 10px; border-radius: 4px;'>composer require tecnickcom/tcpdf</pre>";
-    echo "<p><a href='view_invoice.php?id=" . htmlspecialchars($_GET['id'] ?? '') . "' style='display: inline-block; background-color: #0d6efd; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;'>View Invoice</a></p>";
+    $tcpdfCandidates = [
+        $baseDir . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'tecnickcom' . DIRECTORY_SEPARATOR . 'tcpdf' . DIRECTORY_SEPARATOR . 'tcpdf.php',
+        $baseDir . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'tcpdf' . DIRECTORY_SEPARATOR . 'tcpdf.php',
+    ];
+    foreach ($tcpdfCandidates as $candidate) {
+        if (file_exists($candidate)) {
+            require_once $candidate;
+            break;
+        }
+    }
+}
+
+// 4) If TCPDF is still unavailable, show a helpful diagnostic and exit
+if (!class_exists('TCPDF')) {
+    $checked = [];
+    $checked[] = $autoloadPath;
+    if (!empty($tcpdfCandidates)) {
+        $checked = array_merge($checked, $tcpdfCandidates);
+    }
+
+    $checkedHtml = '';
+    foreach ($checked as $p) {
+        $real = @realpath($p);
+        $exists = $real ? 'FOUND' : 'MISSING';
+        $display = htmlspecialchars($real ?: $p, ENT_QUOTES, 'UTF-8');
+        $checkedHtml .= "<li><code>{$display}</code> — <strong>{$exists}</strong></li>";
+    }
+
+    $fontsDir = $baseDir . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'tecnickcom' . DIRECTORY_SEPARATOR . 'tcpdf' . DIRECTORY_SEPARATOR . 'fonts';
+    $fontsStatus = is_dir($fontsDir) ? 'FOUND' : 'MISSING';
+
+    echo "<div style='background:#fff; border:1px solid #eee; padding:20px; font-family:Arial,Helvetica,sans-serif;'>";
+    echo "<h2 style='color:#d9534f; margin-top:0;'>PDF Generation Not Available</h2>";
+    echo "<p>The TCPDF PHP class <code>TCPDF</code> could not be loaded.</p>";
+    echo "<p>Paths checked:</p>";
+    echo "<ul style='font-size:13px; color:#333;'>{$checkedHtml}</ul>";
+    echo "<p>Fonts directory: <code>" . htmlspecialchars($fontsDir, ENT_QUOTES, 'UTF-8') . "</code> — <strong>" . $fontsStatus . "</strong></p>";
+    echo "<p>Possible fixes:</p>";
+    echo "<ul style='font-size:13px; color:#333;'>";
+    echo "<li>Upload the full <code>vendor/</code> directory produced by Composer (recommended). It includes <code>vendor/autoload.php</code> and all dependencies.</li>";
+    echo "<li>Or, if you can't run Composer on the server, ensure <code>vendor/tecnickcom/tcpdf/tcpdf.php</code> exists and is readable by PHP (same directory where this script lives).</li>";
+    echo "<li>Check file permissions (PHP must be able to read the files) and that the path names/casing match your server (Linux hosts are case-sensitive).</li>";
+    echo "<li>If you uploaded files via FTP, re-upload as a zip and extract on server (to preserve mode and avoid corruption), or run Composer locally and upload the whole <code>vendor/</code> folder.</li>";
+    echo "</ul>";
+    echo "<p>Quick test file (create <code>test_tcpdf.php</code> next to this script and open it in browser):</p>";
+    echo "<pre style='background:#f5f5f5;padding:10px;'>&lt;?php\n// Try autoload or direct require\nif (file_exists(__DIR__ . '/vendor/autoload.php')) require_once __DIR__ . '/vendor/autoload.php';\nif (!class_exists('TCPDF') && file_exists(__DIR__ . '/vendor/tecnickcom/tcpdf/tcpdf.php')) require_once __DIR__ . '/vendor/tecnickcom/tcpdf/tcpdf.php';\nvar_dump(class_exists('TCPDF'));</pre>";
+    echo "<p style='margin-top:12px;'><a href='view_invoice.php?id=" . htmlspecialchars($_GET['id'] ?? '') . "' style='display:inline-block;padding:8px 12px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px;'>Back to Invoice</a></p>";
     echo "</div>";
     exit;
 }
@@ -256,13 +304,30 @@ $pdf->SetDrawColor(226, 232, 240);
 
 $fill = false;
 foreach($invoice['items'] as $item) {
-    $pdf->Cell($w[0], 9, $item['description'], 'LR', 0, 'L', $fill);
-    $pdf->Cell($w[1], 9, number_format($item['quantity']), 'LR', 0, 'R', $fill);
-    $pdf->Cell($w[2], 9, 'Rs. ' . number_format($item['price'], 2), 'LR', 0, 'R', $fill);
+    // Calculate row height based on description length
+    $descHeight = $pdf->getStringHeight($w[0] - 2, $item['description']);
+    $rowHeight = max(9, $descHeight + 2);
     
+    // Store current Y position
+    $startY = $pdf->GetY();
+    $startX = $pdf->GetX();
+    
+    // Description cell with MultiCell (allows text wrapping)
+    $pdf->MultiCell($w[0], $rowHeight, $item['description'], 'LR', 'L', $fill, 0, '', '', true, 0, false, true, $rowHeight, 'M');
+    
+    // Move to same Y position for other columns
+    $pdf->SetXY($startX + $w[0], $startY);
+    
+    // Quantity cell
+    $pdf->Cell($w[1], $rowHeight, number_format($item['quantity']), 'LR', 0, 'R', $fill, '', 0, false, 'T', 'M');
+    
+    // Unit price cell
+    $pdf->Cell($w[2], $rowHeight, 'Rs. ' . number_format($item['price'], 2), 'LR', 0, 'R', $fill, '', 0, false, 'T', 'M');
+    
+    // Amount cell (green, bold)
     $pdf->SetFont('helvetica', 'B', 9.5);
     $pdf->SetTextColor(4, 120, 87);
-    $pdf->Cell($w[3], 9, 'Rs. ' . number_format($item['price'] * $item['quantity'], 2), 'LR', 0, 'R', $fill);
+    $pdf->Cell($w[3], $rowHeight, 'Rs. ' . number_format($item['price'] * $item['quantity'], 2), 'LR', 0, 'R', $fill, '', 0, false, 'T', 'M');
     $pdf->SetFont('helvetica', '', 9.5);
     $pdf->SetTextColor(30, 41, 59);
     
